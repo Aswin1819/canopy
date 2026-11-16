@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.png binary
+assets/d3.v7.min.js -text

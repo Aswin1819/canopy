@@ -1,0 +1,25 @@
+{"title": "Plan: add sign-in to the web app", "subtitle": "Example plan · rule Keep / Cut / Change / Ask on each node",
+ "root": {"id": "plan", "name": "Add sign-in", "note": "Email magic links + Google, for a small Next.js app", "children": [
+  {"id": "scope", "name": "Scope", "children": [
+    {"id": "scope.email", "name": "Email magic link", "note": "No passwords stored"},
+    {"id": "scope.google", "name": "Google sign-in"},
+    {"id": "scope.github", "name": "GitHub sign-in", "note": "Nice to have; could be cut"},
+    {"id": "scope.2fa", "name": "Two-factor auth", "todo": true, "note": "Later phase?"}]},
+  {"id": "backend", "name": "Backend", "children": [
+    {"id": "backend.lib", "name": "Use an auth library", "note": "Auth.js, not hand-rolled"},
+    {"id": "backend.db", "name": "Users + sessions tables", "note": "Migration with rollback"},
+    {"id": "backend.rate", "name": "Rate-limit sign-in", "note": "10 attempts / 5 min / IP"},
+    {"id": "backend.email", "name": "Transactional email", "note": "Provider TBD"}]},
+  {"id": "frontend", "name": "Frontend", "children": [
+    {"id": "frontend.page", "name": "Sign-in page"},
+    {"id": "frontend.guard", "name": "Protect /dashboard routes"},
+    {"id": "frontend.account", "name": "Account menu + sign-out"}]},
+  {"id": "test", "name": "Testing", "children": [
+    {"id": "test.unit", "name": "Unit tests for session logic"},
+    {"id": "test.e2e", "name": "End-to-end sign-in flow"},
+    {"id": "test.manual", "name": "Manual check on mobile", "h": true}]},
+  {"id": "release", "name": "Release", "children": [
+    {"id": "release.preview", "name": "Preview deploy", "done": true},
+    {"id": "release.approve", "name": "Owner approves", "h": true},
+    {"id": "release.prod", "name": "Production deploy"}]}
+ ]}}

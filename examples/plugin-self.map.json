@@ -1,0 +1,56 @@
+{"title": "Canopy plugin", "subtitle": "How the plugin works · select a node, then K / X / C / A or write a note",
+ "root": {"id": "root", "name": "canopy", "note": "Tree-shaped review and approval gate for Claude's plans. Working name; final name TBD (Prune / Treegate / Canopy).", "children": [
+  {"id": "why", "name": "Why it exists", "children": [
+    {"id": "why.problem", "name": "Plans too long to read", "note": "Even Claude Code's team said they stopped reading long plans"},
+    {"id": "why.gap", "name": "Tree + per-node decisions", "note": "No other tool combines a tree view, a choice per node, automatic return to the session and an approval gate"},
+    {"id": "why.users", "name": "Who uses it", "children": [
+      {"id": "why.users.plan", "name": "Plan scope review", "note": "Main use: before Claude writes code"},
+      {"id": "why.users.research", "name": "Research summaries"},
+      {"id": "why.users.prd", "name": "PRD / spec review"}]}]},
+  {"id": "flow", "name": "How it works", "children": [
+    {"id": "flow.1", "name": "1 · Claude writes the tree", "note": "JSON with stable node ids, or a Markdown outline"},
+    {"id": "flow.2", "name": "2 · Local server starts", "note": "Python stdlib on 127.0.0.1, secret token in the URL"},
+    {"id": "flow.3", "name": "3 · Browser opens the map", "note": "Animated, collapsible, white canvas"},
+    {"id": "flow.4", "name": "4 · You decide per node", "h": true, "note": "Keep / Cut / Change / Ask + notes"},
+    {"id": "flow.5", "name": "5 · Summary, then send", "h": true, "note": "Review everything before it goes back"},
+    {"id": "flow.6", "name": "6 · Result back in session", "note": "Markdown or JSON with status and decisions"},
+    {"id": "flow.7", "name": "7 · Claude acts on it", "note": "Answers asks, applies changes, removes cuts"}]},
+  {"id": "modes", "name": "Modes", "children": [
+    {"id": "modes.review", "name": "Review", "note": "Collect feedback; status: submitted"},
+    {"id": "modes.gate", "name": "Gate (--gate)", "note": "Approve unlocks only after every top-level branch is reviewed; status: approved or changes_requested"},
+    {"id": "modes.export", "name": "Export PLAN.md", "note": "--export-plan writes the approved tree as a checklist, cuts removed"}]},
+  {"id": "ui", "name": "What you can do", "children": [
+    {"id": "ui.select", "name": "Select vs open", "note": "Click label = select; + = open/close"},
+    {"id": "ui.keys", "name": "Keyboard", "note": "K Keep · X Cut · C Change · A Ask · arrows move · N next unreviewed · F fit"},
+    {"id": "ui.counter", "name": "Reviewed n/N counter"},
+    {"id": "ui.general", "name": "General note"},
+    {"id": "ui.legend", "name": "Legend & badges", "note": "Letters on badges, not colour alone"},
+    {"id": "ui.drafts", "name": "Drafts saved", "note": "On disk; survive reload and closed tab"}]},
+  {"id": "agent", "name": "Output for Claude", "children": [
+    {"id": "agent.status", "name": "Statuses", "note": "approved · changes_requested · submitted · closed · closed_tab · timeout"},
+    {"id": "agent.json", "name": "JSON (--json)", "note": "decisions[{id, path, decision, text}], general, stats"},
+    {"id": "agent.md", "name": "Markdown (default)"},
+    {"id": "agent.exit", "name": "Exit codes", "note": "0 done · 2 bad input · 3 timeout · 4 tab closed"}]},
+  {"id": "safety", "name": "Safety", "children": [
+    {"id": "safety.token", "name": "Secret session token", "done": true, "note": "Fake requests get 403 (tested)"},
+    {"id": "safety.origin", "name": "Origin & host checks", "done": true},
+    {"id": "safety.local", "name": "Localhost only", "done": true},
+    {"id": "safety.offline", "name": "Fully offline", "done": true, "note": "d3 bundled, system fonts"},
+    {"id": "safety.escape", "name": "Escaped node text", "done": true}]},
+  {"id": "files", "name": "Files", "children": [
+    {"id": "files.manifest", "name": ".claude-plugin/", "note": "plugin.json + marketplace.json"},
+    {"id": "files.skill", "name": "skills/review/SKILL.md", "note": "Runs as /canopy:review"},
+    {"id": "files.server", "name": "scripts/canopy.py", "note": "Server + launchers (sh / cmd)"},
+    {"id": "files.assets", "name": "assets/", "note": "template.html + bundled d3"},
+    {"id": "files.tests", "name": "tests/ (19 passing)", "done": true}]},
+  {"id": "status", "name": "Status & next", "children": [
+    {"id": "status.done", "name": "Built", "done": true, "children": [
+      {"id": "status.done.v1", "name": "v1 plugin, validator passed"},
+      {"id": "status.done.test", "name": "Tested in Chrome (both modes)"},
+      {"id": "status.done.user", "name": "User-level skill updated"}]},
+    {"id": "status.next", "name": "Next", "todo": true, "children": [
+      {"id": "status.next.install", "name": "Install as plugin", "h": true, "note": "Needs your OK (changes Claude Code settings)"},
+      {"id": "status.next.github", "name": "GitHub (Aswin1819)"},
+      {"id": "status.next.name", "name": "Final name + icon + GIF"},
+      {"id": "status.next.v2", "name": "v2: round-2 answers on nodes", "note": "Plus diff highlighting, rename/move on the map, live updates"}]}]}
+ ]}}

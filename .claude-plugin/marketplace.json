@@ -1,0 +1,12 @@
+{
+  "name": "asw_ii_n-plugins",
+  "description": "Aswin's Claude Code plugins",
+  "owner": { "name": "Aswin" },
+  "plugins": [
+    {
+      "name": "canopy",
+      "source": "./",
+      "description": "Tree-shaped review and approval gate for Claude's plans (Keep / Cut / Change / Ask per node)."
+    }
+  ]
+}

@@ -2,6 +2,8 @@
 
 **Cut the plan, not the code.** A tree-shaped review and approval gate for Claude Code. Claude writes its plan as a tree, the tree opens as a collapsible map in your browser, you rule **Keep / Cut / Change / Ask** on any node, and your decisions come back into the same session before any code is written.
 
+![Canopy demo: open a branch, Keep / Cut / Ask, review and send](docs/demo.gif)
+
 - **Per-node decisions**, one key each: `K` Keep, `X` Cut, `C` Change, `A` Ask, plus optional text.
 - **Approval gate** (`--gate`): Approve unlocks only after you have opened or ruled on every top-level branch. No blind "approve all".
 - **Structured output** with stable node ids (`--json`), or Markdown for a quick read.

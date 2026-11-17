@@ -40,9 +40,10 @@ DISPLAY_NAME = "Canopy"
 ENV_PREFIX = "CANOPY_"            # CANOPY_PORT, CANOPY_BROWSER, CANOPY_DATA_DIR
 FALLBACK_DATA_DIR = Path.home() / ("." + TOOL_NAME)
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MAX_BODY = 1024 * 1024
 MAX_TEXT = 20000
+MAX_OPEN = 5000
 DECISIONS = ("keep", "cut", "change", "ask")
 TOKEN_HEADER = "X-Canopy-Token"
 
@@ -255,6 +256,20 @@ def build_result(doc, status, payload=None, gate=False):
     dropped = [k for k in raw if k not in known] if send else []
     general = str(payload.get("general") or "").strip()[:MAX_TEXT] if send else ""
     reviewed = len(decisions)
+    # Items = nodes with no children. One is covered when it has a decision or note of its own, or when a branch
+    # above it has Keep/Cut/Change/Ask (that decision applies to everything under it without its own).
+    own = {d["id"] for d in decisions}
+    ruled = {d["id"] for d in decisions if d["decision"] != "note"}
+    items = covered = on_branches = 0
+    stack = [(doc["root"], False)]
+    while stack:
+        n, up = stack.pop()
+        if not n["children"]:
+            items += 1
+            covered += up or n["id"] in own
+        else:
+            on_branches += n["id"] in ruled
+            stack.extend((c, up or n["id"] in ruled) for c in n["children"])
     return {
         "version": 1,
         "tool": TOOL_NAME,
@@ -264,8 +279,8 @@ def build_result(doc, status, payload=None, gate=False):
         "source": doc.get("_source", ""),
         "decisions": decisions,
         "general": general,
-        "stats": dict(stats, reviewed=reviewed, nodes=total, top_level=len(top_ids),
-                      dropped_unknown_ids=len(dropped)),
+        "stats": dict(stats, reviewed=reviewed, nodes=total, items=items, items_covered=covered, on_branches=on_branches,
+                      top_level=len(top_ids), dropped_unknown_ids=len(dropped)),
     }
 
 
@@ -279,7 +294,11 @@ def format_markdown(res):
     s = res["stats"]
     if res["status"] in ("submitted", "approved", "changes_requested"):
         counts = ", ".join(f"{s[k]} {DEC_LABEL[k].lower()}" for k in DEC_ORDER if s[k])
-        out.append(f"Reviewed: {s['reviewed']}/{s['nodes']} nodes" + (f" ({counts})" if counts else ""))
+        out.append(f"Reviewed: {s['items_covered']}/{s['items']} items with {s['reviewed']} "
+                   f"decision{'' if s['reviewed'] == 1 else 's'}"
+                   + (f" ({counts})" if counts else ""))
+        if s.get("on_branches"):
+            out.append("A decision on a branch applies to everything under it that has no decision of its own.")
         if res["status"] == "approved" and (s["change"] or s["cut"] or s["ask"]):
             out.append("Approved with notes: treat the items below as guidance, not as a request to stop.")
         out.append("")
@@ -361,9 +380,13 @@ def write_draft(p, d):
 
 # --------------------------------------------------------------------------- server
 def gate_missing(doc, payload):
-    """Top-level branch ids that have not been looked at (expanded/selected) or decided."""
+    """Top-level branch ids that have not been looked at (expanded/selected) or decided.
+    Keep/Cut/Change/Ask on the root covers every branch."""
     seen = set(payload.get("seen") or [])
     dec = payload.get("decisions") or {}
+    rv = dec.get(doc["root"]["id"]) if isinstance(dec, dict) else None
+    if isinstance(rv, dict) and str(rv.get("d") or "").lower() in DECISIONS:
+        return []
     decided_tops = set()
     for n, _p, top in walk_nodes(doc["root"]):
         v = dec.get(n["id"]) if isinstance(dec, dict) else None
@@ -499,14 +522,20 @@ def make_handler(sess):
             if path == "/api/draft":
                 sess.last_hb = time.monotonic()
                 try:
+                    ids = lambda v: [i for i in v if isinstance(i, str)][:MAX_OPEN] if isinstance(v, list) else []
+                    cur, ts = payload.get("cur"), payload.get("ts")
                     write_draft(sess.draft_file, {"v": 1, "decisions": payload.get("decisions") or {},
                                                   "general": str(payload.get("general") or "")[:MAX_TEXT],
-                                                  "seen": payload.get("seen") or [], "saved": time.time()})
+                                                  "seen": ids(payload.get("seen")), "open": ids(payload.get("open")),
+                                                  "cur": cur[:500] if isinstance(cur, str) else None,
+                                                  "ts": ts if isinstance(ts, (int, float)) else 0,
+                                                  "saved": time.time()})
                 except Exception as e:
                     return self._err(500, f"could not save draft: {e}")
                 return self._send(200, '{"ok":true}')
             if path == "/api/close":
-                sess.finish("closed")
+                if not sess.finish("closed"):
+                    return self._err(409, "this review has already finished", status=sess.status)
                 return self._send(200, '{"ok":true}')
             if path == "/api/submit":
                 action = payload.get("action") or "submit"
@@ -518,7 +547,8 @@ def make_handler(sess):
                     if missing:
                         return self._err(409, "review every top-level branch first", missing=missing)
                 status = {"approve": "approved", "request_changes": "changes_requested"}.get(action, "submitted")
-                sess.finish(status, payload)
+                if not sess.finish(status, payload):
+                    return self._err(409, "this review has already finished", status=sess.status)
                 return self._send(200, '{"ok":true}')
             return self._err(404, "not found")
 

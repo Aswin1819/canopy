@@ -210,12 +210,25 @@ class TestFlows(ServerCase):
         self.assertIn("Status: CHANGES REQUESTED", out)
         self.assertIn("`docs`", out)
 
+    def test_gate_root_decision_covers_all_and_second_finish_is_409(self):
+        s = self.start("--gate", "--json")
+        st, _, _ = s.post("/api/submit", {"action": "approve", "decisions": {"root": {"d": "keep", "t": ""}}})
+        self.assertEqual(st, 200)
+        st, body, _ = s.post("/api/submit", {"action": "request_changes", "decisions": {}})
+        self.assertEqual(st, 409)
+        self.assertEqual(json.loads(body)["status"], "approved")
+        code, out, _ = s.finish()
+        self.assertEqual(json.loads(out)["status"], "approved")
+
     def test_close_keeps_draft(self):
         s = self.start("--json")
-        st, _, _ = s.post("/api/draft", {"decisions": {"docs": {"d": "keep", "t": "x"}}, "general": "g", "seen": ["docs"]})
+        st, _, _ = s.post("/api/draft", {"decisions": {"docs": {"d": "keep", "t": "x"}}, "general": "g", "seen": ["docs"],
+                                         "open": ["docs", 7, "api"]})
         self.assertEqual(st, 200)
         drafts = list((s.data / "drafts").glob("*.json"))
         self.assertEqual(len(drafts), 1)
+        self.assertEqual(json.loads(drafts[0].read_text(encoding="utf-8"))["open"], ["docs", "api"],
+                         "open branches are kept (strings only) so the map reopens as it was")
         s.post("/api/close", {})
         code, out, _ = s.finish()
         self.assertEqual(code, 0)
@@ -256,6 +269,20 @@ class TestFlows(ServerCase):
 
 
 class TestParsing(unittest.TestCase):
+    def test_branch_decision_covers_items(self):
+        doc, _ = mr.normalise(json.loads(json.dumps(TREE)))
+        # Keep on the Backend branch covers API and DB; a note on Frontend does not cover Button; Docs has its own note.
+        dec = {"be": {"d": "keep", "t": ""}, "frontend": {"d": "", "t": "later"}, "docs": {"d": "", "t": "fine"}}
+        res = mr.build_result(doc, "submitted", {"decisions": dec})
+        self.assertEqual((res["stats"]["items"], res["stats"]["items_covered"]), (4, 3))
+        self.assertEqual(res["stats"]["on_branches"], 1)
+        out = mr.format_markdown(res)
+        self.assertIn("Reviewed: 3/4 items with 3 decisions", out)
+        self.assertIn("applies to everything under it", out)
+        # Without branch decisions the extra line stays out.
+        res = mr.build_result(doc, "submitted", {"decisions": {"docs": {"d": "keep", "t": ""}}})
+        self.assertNotIn("applies to everything under it", mr.format_markdown(res))
+
     def test_two_top_level_items_do_not_nest(self):
         doc = mr.parse_outline("# My plan\n- A\n- B\n  - B1\n")
         self.assertEqual(doc["root"]["name"], "My plan")

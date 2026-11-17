@@ -11,21 +11,27 @@ body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--f)}
 button{font:inherit}
 kbd{font:600 11px var(--f);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;color:var(--ink)}
 .app{height:100%;display:grid;grid-template-rows:auto auto 1fr}
-.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 14px;border-bottom:1px solid var(--line)}
-.bar h1{font-size:16px;font-weight:700;margin:0}
-.bar .sub{font-size:12.5px;color:var(--muted)}
-.sp{flex:1}
+/* The header is two zones: the left one wraps and shrinks, the actions on the right never move. */
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 12px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.bl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}
+.br{display:flex;flex-wrap:nowrap;align-items:center;gap:8px}
+.ttl{min-width:0;max-width:100%}
+.bar h1{font-size:16px;font-weight:700;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .sub{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp{flex:1} .narrow{display:none}
 .btn{font-size:13px;font-weight:500;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;white-space:nowrap}
 .btn:hover{background:var(--chip)} .btn:focus-visible,.chip:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)} .btn.primary:hover{background:#38424d}
-.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn[disabled],.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
 .btn.ghost{border-color:transparent;color:var(--muted)}
 .grp{display:flex;gap:4px}
+.hint{font-size:12.5px;color:#7a4a06;background:#fff4e5;border:1px solid #f0d9b5;border-radius:999px;padding:6px 12px;cursor:pointer;max-width:42ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hint[hidden]{display:none}
 .prog{font-size:12.5px;color:var(--ink);background:var(--chip);border-radius:999px;padding:6px 12px;border:1px solid var(--line);cursor:pointer}
 .banner{display:flex;gap:10px;align-items:center;padding:8px 14px;background:#fff4e5;border-bottom:1px solid #f0d9b5;font-size:13px}
 .banner[hidden]{display:none}
-.bar{grid-row:1}.banner{grid-row:2}.main{grid-row:3;display:grid;grid-template-columns:1fr 370px;min-height:0}
-@media (max-width:860px){.main{grid-template-columns:1fr;grid-template-rows:1fr 52%}}
+.bar{grid-row:1}.banner{grid-row:2}.main{grid-row:3;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,30vw,400px);min-height:0}
+@media (max-width:640px){.main{grid-template-columns:1fr;grid-template-rows:1fr 52%}}
 .stage{position:relative;min-height:0;overflow:hidden;background:radial-gradient(circle,#e9ecf0 1px,transparent 1.2px) 0 0/22px 22px}
 svg{width:100%;height:100%;display:block;cursor:grab} svg:active{cursor:grabbing}
 .link{fill:none;stroke-width:1.8;stroke-opacity:.5}
@@ -37,38 +43,78 @@ svg{width:100%;height:100%;display:block;cursor:grab} svg:active{cursor:grabbing
 .node:focus-visible .halo{display:block;stroke-dasharray:3 3;stroke:var(--focus)}
 .node.sel .halo{display:block;stroke-dasharray:none;stroke:var(--ink)}
 .node.cut .lbl{text-decoration:line-through} .node.cut .body{opacity:.55}
-.node.dim{opacity:.42}
+.node.dim{opacity:.6}
+.node.pulse .halo{display:block;animation:pulse .7s ease-out 1}
+@keyframes pulse{0%{stroke-width:2}40%{stroke-width:7}100%{stroke-width:2}}
+.inh rect{fill:#fff;stroke-width:1.5} .inh text{font:700 11px var(--f);pointer-events:none}
 .chev{cursor:pointer} .chev circle{fill:#fff;stroke-width:1.5} .chev text{font:700 13px var(--f);pointer-events:none}
 .chev:hover circle{fill:var(--chip)}
 .badge text{font:700 11px var(--f);fill:#fff;pointer-events:none}
 .hdot text{font:700 9px var(--f);fill:#fff;pointer-events:none}
-.side{border-left:1px solid var(--line);display:grid;grid-template-rows:auto 1fr auto;min-height:0;background:#fbfbfc}
-@media (max-width:860px){.side{border-left:0;border-top:1px solid var(--line)}}
+.side{border-left:1px solid var(--line);display:grid;grid-template-rows:auto auto minmax(0,1fr);min-height:0;background:#fbfbfc;font-size:15px}
+@media (max-width:640px){.side{border-left:0;border-top:1px solid var(--line)}}
+.node.fade{opacity:.18} .node.fade.dim{opacity:.12} .node.fade.sel{opacity:1}
+.link.dim{stroke-opacity:.18} .link.fade,.link.fade.dim{stroke-opacity:.08}
+.pg{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.btn.tg[aria-pressed="true"]{background:#e6e9ef;border-color:var(--ink);font-weight:600}
+.btn.primary kbd{background:transparent;color:#fff;border-color:rgba(255,255,255,.55);margin-left:4px}
+.btn.ex{color:var(--ink);padding-left:8px;padding-right:8px}
+.btn.fx{padding:4px 8px;font-size:12.5px}
+.L.Lo{background:#fff;border:1.5px solid;box-sizing:border-box}
+.toast{position:absolute;left:50%;top:62px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13.5px;padding:8px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(31,41,51,.25);z-index:4;max-width:calc(100% - 24px);text-align:center}
+.toast[hidden]{display:none}
+.cov{font-size:13px;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-top:6px}
+.find{position:absolute;left:10px;top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:10px;padding:6px;z-index:2;max-width:calc(100% - 20px)}
+.find input,.find select{font:13px var(--f);border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:#fff;color:var(--ink);min-width:0}
+.find input{width:min(220px,40vw)}
+.find input:focus-visible,.find select:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.fcount{font-size:12.5px;color:var(--muted);padding:0 4px;white-space:nowrap}
+.fcount[hidden]{display:none}
+.outline{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:58px 10px 16px;display:flex;flex-direction:column;scroll-padding-top:58px}
+.outline[hidden]{display:none}
+.orow{display:flex;gap:8px;align-items:flex-start;padding:5px 8px;border-radius:8px;cursor:pointer;outline:none;border:1.5px solid transparent}
+.orow:hover{background:var(--chip)} .orow:focus-visible{border-color:var(--focus);border-style:dashed}
+.orow.sel{background:var(--chip);border-color:var(--ink)}
+.orow.cut .on{text-decoration:line-through;color:var(--muted)} .orow.dim .on,.orow.dim .onote{color:var(--muted)} .orow.fade{display:none} .orow.ctx .on{color:var(--muted)}
+.orow:not(.d0){box-shadow:inset 3px 0 0 var(--bc);border-radius:0 8px 8px 0}
+.orow .oc{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font:700 13px/1 var(--f);color:var(--muted);cursor:pointer;display:grid;place-items:center;padding:0}
+.orow .oc.leaf{visibility:hidden}
+.orow .L{flex:none;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:4px;color:#fff;font-size:11px;font-weight:700;padding:0 3px;margin-top:2px}
+.orow .ob{min-width:0;flex:1;max-width:80ch}
+.orow .on{font-size:14px;overflow-wrap:anywhere} .orow.d0 .on{font-weight:700;font-size:15px} .orow.d1 .on{font-weight:600}
+.orow .onote{font-size:13px;color:var(--muted);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.orow .otx{font-size:13px;color:var(--ink);overflow-wrap:anywhere;white-space:pre-wrap;margin-top:2px}
+.orow .ot{font-size:11px;font-weight:700;border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px;background:var(--humanfill);color:var(--human);border:1px solid #cfc5b3}
+.target{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.target b{color:var(--ink)}
+.tip .tp{color:var(--muted);font-size:12px;display:block;margin-bottom:2px}
+.tip .td{display:block;margin-top:4px}
 .nodebox{padding:12px 16px;border-bottom:1px solid var(--line);max-height:34vh;overflow:auto}
 .mid{overflow:auto;min-height:0;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
-.composer{border-top:1px solid var(--line);padding:12px 16px;background:#fff;display:flex;flex-direction:column;gap:8px}
-.path{font-size:12px;color:var(--muted)}
-.selname{font-size:16px;font-weight:700;margin:2px 0 4px}
-.note{font-size:13px;color:#33404c;white-space:pre-wrap}
+.composer{border-bottom:1px solid var(--line);padding:12px 16px;background:#fff;display:flex;flex-direction:column;gap:8px}
+.path{font-size:13px;color:var(--muted)}
+.selname{font-size:18px;font-weight:700;margin:2px 0 4px;overflow-wrap:anywhere}
+.note{font-size:14.5px;line-height:1.5;color:#33404c;white-space:pre-wrap;overflow-wrap:anywhere}
 .tags{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
-.tag{font-size:11px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
-.nid{font:11px ui-monospace,Consolas,monospace;color:var(--muted)}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{font-size:13px;font-weight:600;padding:5px 10px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.tag{font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
+.nid{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}
+.chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.chip{font-size:14px;font-weight:600;padding:6px 8px;justify-content:center;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .chip .L{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:4px;color:#fff;font-size:11px}
 .chip[aria-pressed="true"]{border-color:var(--ink);background:var(--chip)}
 .chip[disabled]{opacity:.45;cursor:not-allowed}
 .Lk{background:var(--keep)} .Lx{background:var(--cut)} .Lc{background:var(--change)} .La{background:var(--ask)} .Ln{background:var(--note)}
-textarea{width:100%;min-height:72px;resize:vertical;font:14px/1.45 var(--f);padding:8px 10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
+textarea{width:100%;min-height:72px;resize:vertical;font:15px/1.45 var(--f);padding:8px 10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
 textarea[disabled]{background:var(--chip)}
 .row{display:flex;gap:8px;align-items:center}
-.saved{font-size:12px;color:var(--muted)}
-.h3{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0}
+.saved{font-size:13px;color:var(--muted)}
+.h3{font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0}
 .dl{display:flex;flex-direction:column;gap:4px}
-.di{display:flex;gap:8px;align-items:flex-start;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--ink);font-size:13px;width:100%}
+.di{display:flex;gap:8px;align-items:flex-start;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--ink);font-size:14.5px;line-height:1.45;width:100%}
 .di:hover{background:var(--chip)} .di .L{flex:none;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:4px;color:#fff;font-size:11px;font-weight:700;padding:0 3px}
-.di .tx{color:var(--muted);display:block}
-.empty{font-size:13px;color:var(--muted)}
+.di>span:last-child{min-width:0;overflow-wrap:anywhere}
+.di .tx{color:var(--muted);display:block;white-space:pre-wrap;margin-top:2px}
+.empty{font-size:14px;color:var(--muted)}
 .tip{position:absolute;max-width:300px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;box-shadow:0 8px 24px rgba(31,41,51,.12);pointer-events:none;opacity:0;transition:opacity .12s;white-space:pre-wrap}
 .legend{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--ink);max-width:calc(100% - 20px)}
 .legend summary{cursor:pointer;font-weight:600}
@@ -88,50 +134,86 @@ textarea[disabled]{background:var(--chip)}
 .cnt .L{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:4px;color:#fff;font-size:10px}
 .warn{background:#fff4e5;border:1px solid #f0d9b5;border-radius:8px;padding:8px 10px;font-size:13px}
 .info{background:#eef4fb;border:1px solid #cfe0f3;border-radius:8px;padding:8px 10px;font-size:13px}
-.done{position:fixed;inset:0;background:rgba(255,255,255,.97);display:grid;place-items:center;text-align:center;font-size:18px;z-index:30}
+.done{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;text-align:center;z-index:30;padding:24px}
+.donecard{max-width:620px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.donemark{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;font-size:56px;font-weight:700;color:#fff;background:var(--keep)}
+.done h2{font-size:36px;line-height:1.2;margin:6px 0 0;color:var(--ink)}
+.done .dsub{font-size:19px;line-height:1.5;color:var(--ink);margin:0}
+.done .dhint{font-size:16px;color:var(--muted);margin:4px 0 0}
+.done .counts{justify-content:center}.done .cnt{font-size:15px;padding:5px 12px}.done .cnt .L{width:20px;height:20px;font-size:12px}
 .done[hidden]{display:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:1250px) and (min-width:641px){.chip{padding:6px 4px;font-size:13px;gap:4px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (hover:none){.prog kbd,.btn kbd{display:none}}
+@media (max-width:640px){
+  .bar{padding:8px 10px;gap:6px;grid-template-columns:1fr}.bar .sub{display:none}.bar h1{font-size:15px}
+  .br{justify-content:flex-end;flex-wrap:wrap}.btn kbd{display:none}.wide{display:none}.narrow{display:inline}
+  .toast{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+  .prog{white-space:nowrap;padding:5px 10px}.prog kbd{display:none}
+  .grp .btn,.br .btn{padding:5px 9px}
+  .hint{max-width:100%;flex-basis:100%}
+  .side{display:flex;flex-direction:column;overflow:auto}.nodebox{max-height:16vh;flex:none}
+  .composer{position:sticky;top:0;z-index:1;order:-1;box-shadow:0 2px 6px rgba(31,41,51,.08)} .mid{overflow:visible;flex:none}
+  .find{gap:4px;padding:4px}.find input{width:min(150px,36vw)}
+}
 </style></head><body>
 <div class="app">
   <header class="bar">
-    <div><h1 id="title"></h1><div class="sub" id="subtitle"></div></div>
-    <div class="sp"></div>
-    <button class="prog" id="next" type="button" title="Jump to the next node without a decision (N)"><span id="progress">Reviewed 0/0</span> · Next <kbd>N</kbd></button>
-    <div class="grp">
-      <button class="btn" id="expand" type="button">Expand all</button>
-      <button class="btn" id="collapse" type="button">Collapse</button>
-      <button class="btn" id="fit" type="button" title="Fit (F)">Fit</button>
+    <div class="bl">
+      <div class="ttl"><h1 id="title"></h1><div class="sub" id="subtitle"></div></div>
+      <div class="pg"><button class="prog" id="next" type="button" title="Jump to the next node without a decision (N)"><span id="progress">Reviewed 0/0</span> · Next <kbd>N</kbd></button>
+      <div class="grp">
+        <button class="btn" id="expand" type="button">Expand all</button>
+        <button class="btn" id="collapse" type="button">Collapse</button>
+        <button class="btn" id="fit" type="button" title="Show the whole map (F)">Fit</button>
+        <button class="btn tg" id="view" type="button" aria-pressed="false" title="Show the plan as an indented list with every note (O)">Outline</button>
+      </div></div>
+      <button class="hint" id="gatehint" type="button" hidden></button>
     </div>
-    <button class="btn ghost" id="close" type="button">Close…</button>
-    <button class="btn" id="reqchg" type="button" hidden>Request changes…</button>
-    <button class="btn primary" id="approve" type="button" hidden>Approve…</button>
-    <button class="btn primary" id="submit" type="button">Review &amp; send…</button>
+    <div class="br">
+      <button class="btn ghost" id="close" type="button">Close…</button>
+      <button class="btn" id="reqchg" type="button" hidden><span class="wide">Request changes…</span><span class="narrow">Changes…</span></button>
+      <button class="btn primary" id="approve" type="button" hidden>Approve…</button>
+      <button class="btn primary" id="submit" type="button">Review &amp; send…</button>
+    </div>
   </header>
   <div class="banner" id="banner" role="alert" hidden><span id="bannertext"></span><span class="sp"></span><button class="btn" id="retry" type="button" hidden>Retry</button><button class="btn ghost" id="bannerx" type="button">Dismiss</button></div>
   <div class="main">
     <div class="stage" id="stage">
       <svg id="svg" role="tree" aria-label="Plan tree. Arrow keys move, K X C A decide, Space opens."><g id="vp"><g id="links"></g><g id="nodes"></g></g></svg>
+      <div class="outline" id="outline" role="tree" aria-label="Plan outline. Arrow keys move, K X C A decide, Space opens." hidden></div>
+      <div class="find" role="search">
+        <label class="sr" for="q">Search nodes</label><input id="q" type="search" placeholder="Search…  ( / )" autocomplete="off">
+        <label class="sr" for="flt">Show</label>
+        <select id="flt"><option value="">All nodes</option><option value="open">Not covered yet</option><option value="dec">With my decision</option><option value="ca">Change or Ask</option><option value="h">Human steps</option><option value="todo">To do (○)</option><option value="done">Done (✓)</option></select>
+        <span class="fcount" id="fcount" aria-live="polite" hidden></span><button class="btn ghost fx" id="fclear" type="button" hidden title="Clear search and filter (Esc)">Clear</button>
+      </div>
       <div class="tip" id="tip"></div>
-      <details class="legend" id="legend" open><summary>Legend &amp; keys</summary>
+      <div class="toast" id="toast" role="status" hidden></div>
+      <details class="legend" id="legend"><summary>Legend &amp; keys</summary>
         <div class="lg"><span><span class="L Lk">K</span>Keep</span><span><span class="L Lx">X</span>Cut</span><span><span class="L Lc">C</span>Change</span><span><span class="L La">A</span>Ask</span><span><span class="L Ln">✎</span>Note</span></div>
         <div class="lg"><span>✓ done</span><span><span class="sw" style="border-style:dashed"></span>○ todo</span><span><span class="L" style="background:var(--human);border-radius:50%">H</span>human step</span><span>struck = cut</span></div>
-        <div class="lg path">Click a label to select · click + to open · ←↑↓→ move · Space open · Enter write · N next · F fit</div>
+        <div class="lg"><span><span class="L Lo" style="color:var(--keep);border-color:var(--keep)">K</span>covered by a branch decision</span></div>
+        <div class="lg path">Click a label to select · click + to open · ←↑↓→ move · Space open · Enter write · Ctrl+Enter done · N next · F whole map · O outline · / search</div>
+        <div class="lg path">Items are the end points of the tree. A decision on a branch counts for everything under it that has no decision of its own.</div>
       </details>
       <div class="zoom"><button class="btn" id="zin" type="button" aria-label="Zoom in">+</button><button class="btn" id="zout" type="button" aria-label="Zoom out">−</button></div>
     </div>
     <aside class="side" aria-label="Selected node">
       <section class="nodebox" id="nodebox"></section>
-      <section class="mid">
-        <div><h3 class="h3" id="dlhead">Your decisions</h3></div>
-        <div class="dl" id="dlist"></div>
-        <label class="h3" for="general">General note (whole plan)</label>
-        <textarea id="general" placeholder="Anything not tied to one node…"></textarea>
-      </section>
       <section class="composer" aria-label="Decision on selected node">
+        <div class="target" id="target"></div>
         <div class="chips" id="chips" role="group" aria-label="Decision"></div>
         <label class="sr" for="ctext">Note on the selected node</label>
         <textarea id="ctext"></textarea>
-        <div class="row"><button class="btn primary" id="save" type="button">Save note</button><span class="saved" id="saved" aria-live="polite"></span></div>
+        <div class="row"><button class="btn primary" id="save" type="button" title="Notes save as you type. Done returns to the map (Ctrl+Enter).">Done <kbd class="kb">Ctrl+Enter</kbd></button><span class="saved" id="saved"></span></div>
+      </section>
+      <section class="mid">
+        <div><h3 class="h3" id="dlhead">Your decisions</h3></div>
+        <div class="dl" id="dlist"></div>
+        <div class="row"><label class="h3" for="general">General note (whole plan)</label><span class="saved" id="gsaved"></span></div>
+        <textarea id="general" placeholder="Anything not tied to one node…"></textarea>
       </section>
     </aside>
   </div>
@@ -144,9 +226,10 @@ textarea[disabled]{background:var(--chip)}
 <div class="modal" id="sheet" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="shh">
   <header><h2 id="shh"></h2></header>
   <div class="body" id="shbody"></div>
-  <footer><button class="btn" id="shback" type="button">Back to the map</button><button class="btn primary" id="shgo" type="button"></button></footer>
+  <footer><button class="btn ghost ex" id="exmd" type="button" title="Copy the decisions as Markdown, to paste into another session">⧉ Copy as Markdown</button><button class="btn ghost ex" id="exjson" type="button" title="Save the decisions as a JSON file">⤓ Download JSON</button><span class="sp"></span><button class="btn" id="shback" type="button">Back to the map</button><button class="btn primary" id="shgo" type="button"></button></footer>
 </div></div>
-<div class="done" id="donebox" hidden><div><div style="font-size:40px" aria-hidden="true">✓</div><b id="donemsg">Sent to Claude.</b><div style="color:var(--muted);margin-top:6px">You can close this tab.</div></div></div>
+<div class="sr" id="announce" role="status"></div>
+<div class="done" id="donebox" hidden><div class="donecard"><div class="donemark" id="donemark" aria-hidden="true">✓</div><h2 id="donemsg" tabindex="-1">Sent to Claude.</h2><p class="dsub" id="donesub"></p><div class="counts" id="donecounts"></div><p class="dhint">You can close this tab and go back to Claude Code.</p></div></div>
 <script nonce="__NONCE__">/*__D3__*/</script>
 <script nonce="__NONCE__">
 "use strict";
@@ -175,6 +258,7 @@ const byId=new Map();
 ALL.forEach((d,i)=>{d.nid=d.data.id;d.ord=i;byId.set(d.nid,d);d.path=d.ancestors().reverse().map(a=>a.data.name);
   d.top=d.ancestors().find(a=>a.depth===1)||null;d.pal=d.top?PAL[root.children.indexOf(d.top)%PAL.length]:["#1f2933","#1f2933"];});
 ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null;}});
+const openIds=()=>ALL.filter(d=>d.depth>=1&&d.children).map(d=>d.nid);
 const kids=d=>!!(d.children||d._children);
 const TOPS=root.children||root._children||[];
 
@@ -182,57 +266,107 @@ const TOPS=root.children||root._children||[];
 let store={decisions:{},general:"",seen:new Set()};
 function lsGet(){try{return JSON.parse(localStorage.getItem("mmr:"+CFG.draftKey))}catch(e){return null}}
 function lsSet(o){try{localStorage.setItem("mmr:"+CFG.draftKey,JSON.stringify(o))}catch(e){}}
-let orphans=0;
-(function restore(){const init=CFG.draft||lsGet();if(!init||typeof init!=="object")return;
+let orphans=0,restoredCur=null;
+// The server draft and the browser copy can differ (edits made while the server was down): take the newer one.
+(function restore(){const a=CFG.draft,b=lsGet(),init=a&&b?((+b.ts||0)>(+a.ts||0)?b:a):(a||b);if(!init||typeof init!=="object")return;
+  if(typeof init.cur==="string")restoredCur=init.cur;
   for(const[k,v]of Object.entries(init.decisions||{})){if(!byId.has(k)){orphans++;continue}if(!v||typeof v!=="object")continue;
     const d=DECS.includes(v.d)?v.d:"",t=String(v.t||"").slice(0,20000);if(d||t)store.decisions[k]={d,t};}
-  store.general=String(init.general||"");(init.seen||[]).forEach(id=>{if(byId.has(id))store.seen.add(id)});})();
+  store.general=String(init.general||"");(init.seen||[]).forEach(id=>{if(byId.has(id))store.seen.add(id)});
+  // Reopen what was open, so the map matches the "Branches n/N" counter. Older drafts only know which branches were seen.
+  const open=Array.isArray(init.open)?init.open:[...store.seen];
+  open.forEach(id=>{const d=byId.get(id);if(d&&d.depth>=1&&d._children){d.children=d._children;d._children=null}});})();
 const entry=d=>store.decisions[d.nid];
 const decOf=d=>{const e=entry(d);return e?(e.d||(e.t.trim()?"note":"")):""};
 const reviewed=d=>!!decOf(d);
+const ruled=d=>{const e=entry(d);return!!(e&&e.d)};
+// Progress counts end items (nodes with no children). Keep/Cut/Change/Ask on a branch covers everything under it.
+const covered=d=>{if(reviewed(d))return true;for(let a=d.parent;a;a=a.parent)if(ruled(a))return true;return false};
+const LEAVES=ALL.filter(d=>!kids(d));
+const coverOf=d=>{for(let a=d.parent;a;a=a.parent)if(ruled(a))return a;return null};
 function markSeen(top){if(top&&!store.seen.has(top.nid)){store.seen.add(top.nid);queueSave();if(typeof counts==="function"&&$("progress"))counts();}}
-const missingTops=()=>TOPS.filter(t=>!store.seen.has(t.nid)&&!ALL.some(d=>d.top===t&&reviewed(d)));
-function payload(){return{decisions:store.decisions,general:store.general,seen:[...store.seen]};}
+// Gate: a top-level branch counts once it was opened or selected, something in it has a decision, or the root has one.
+const missingTops=()=>ruled(root)?[]:TOPS.filter(t=>!store.seen.has(t.nid)&&!ALL.some(d=>d.top===t&&reviewed(d)));
+function payload(){return{decisions:store.decisions,general:store.general,seen:[...store.seen],open:openIds(),cur:cur?cur.nid:null,ts:Date.now()};}
 
 // ---------- server I/O
 let sealed=false;
-async function post(url,body){return fetch(url,{method:"POST",headers:{"Content-Type":"application/json",[CFG.header]:CFG.token},body:JSON.stringify(body),cache:"no-store"});}
+async function post(url,body){const ac=new AbortController(),t=setTimeout(()=>ac.abort(),5000);
+  try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json",[CFG.header]:CFG.token},body:JSON.stringify(body),cache:"no-store",signal:ac.signal});
+    if(r.status===403)restarted();return r;}finally{clearTimeout(t);}}
+// A 403 means another server now answers on this port (Claude re-ran the review): this tab's token is dead.
+let wasRestarted=false;
+function restarted(){if(wasRestarted||sealed)return;wasRestarted=true;lost=true;
+  banner("This review was restarted or replaced. Open the new link from Claude Code: your draft is kept and comes back there.");}
 let saveT=null;
-function queueSave(){lsSet(payload());$("saved").textContent="Saving…";clearTimeout(saveT);saveT=setTimeout(flushSave,400);}
-async function flushSave(){clearTimeout(saveT);if(sealed)return;try{const r=await post("/api/draft",payload());if(!r.ok)throw 0;$("saved").textContent="Draft saved";}catch(e){$("saved").textContent="Saved in this browser only (server unreachable)";}}
-function beat(){if(!sealed)post("/api/heartbeat",{}).catch(()=>{});}
+const hhmm=()=>new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+let editAt=null;   // "saved" (node composer) or "gsaved" (general note): where the status shows; none until the first edit
+function setSaved(t){["saved","gsaved"].forEach(i=>{const e=$(i),v=i===editAt?t:"";if(e&&e.textContent!==v)e.textContent=v;});}
+function announce(t){const a=$("announce");a.textContent="";setTimeout(()=>{a.textContent=t},30);}
+function queueSave(){if(sealed)return;lsSet(payload());setSaved("Saving…");clearTimeout(saveT);saveT=setTimeout(flushSave,400);}
+async function flushSave(){clearTimeout(saveT);if(sealed)return false;
+  try{const r=await post("/api/draft",payload());if(!r.ok)throw 0;setSaved("Draft saved · "+hhmm());return true;}
+  catch(e){setSaved("Saved in this browser only (server unreachable)");return false;}}
+// Heartbeats double as a connection check: two misses in a row show a banner, the next success clears it.
+let hbFail=0,lost=false;
+function beat(){if(sealed)return;post("/api/heartbeat",{}).then(r=>{if(!r.ok)throw 0;hbFail=0;if(lost){lost=false;$("banner").hidden=true;toast("Reconnected to the review server");flushSave();}})
+  .catch(()=>{if(wasRestarted)return;if(++hbFail>=2&&!lost&&!sealed){lost=true;banner("Lost contact with the review server. Keep going: your work is saved in this browser and syncs when it is back.");}});}
 beat();const hbTimer=setInterval(beat,Math.max(1000,CFG.hb||20000));
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)beat();});
 function banner(text,retry){$("bannertext").textContent=text;$("retry").hidden=!retry;$("retry").onclick=retry||null;$("banner").hidden=false;}
 $("bannerx").onclick=()=>{$("banner").hidden=true};
+let toastT=null;
+function toast(t,ms=3200){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{e.hidden=true},ms);}
 if(orphans)banner(`${orphans} saved decision${orphans>1?"s":""} belonged to nodes that are no longer in this map and were left out.`);
 
 // ---------- layout + render
 const svg=d3.select("#svg"),vp=d3.select("#vp"),gL=d3.select("#links"),gN=d3.select("#nodes");
-const zoom=d3.zoom().scaleExtent([0.12,2.4]).on("zoom",e=>vp.attr("transform",e.transform));
+const zoom=d3.zoom().scaleExtent([0.05,2.4]).on("zoom",e=>vp.attr("transform",e.transform));
 svg.call(zoom).on("dblclick.zoom",null);
 const stage=$("stage"),tip=$("tip");
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,DUR=reduce?0:380;
 const mctx=document.createElement("canvas").getContext("2d");
-const MAXC=34;
-const label=d=>{const n=d.data.name;return(d.data.done?"✓ ":d.data.todo?"○ ":"")+(n.length>MAXC?n.slice(0,MAXC-1)+"…":n)};
+const LINE=32,ONE=36;  // names up to ONE chars stay on one line; longer ones wrap to two lines of about LINE chars
+function wrapName(name){
+  if(name.length<=ONE)return{lines:[name],cut:false};
+  // Split at the space that balances the two lines best (first line at most ONE chars); no usable space: hard break.
+  let best=-1,score=Infinity;
+  for(let i=name.indexOf(" ");i>0&&i<=ONE;i=name.indexOf(" ",i+1)){const s=Math.max(i,name.length-i-1);if(s<=score){score=s;best=i;}}
+  if(best<LINE*0.4)best=-1;
+  const l1=best>0?name.slice(0,best):name.slice(0,LINE);let l2=(best>0?name.slice(best+1):name.slice(LINE)).trim(),cut=false;
+  if(l2.length>ONE){l2=l2.slice(0,ONE-1).trimEnd()+"…";cut=true;}
+  return{lines:[l1,l2],cut};}
 const fontOf=d=>(d.depth===0?"700 15px ":d.depth===1?"600 13px ":"400 13px ")+FONT;
-ALL.forEach(d=>{mctx.font=fontOf(d);d.w=Math.ceil(mctx.measureText(label(d)).width)+(d.depth===0?36:26)+(d.data.h?16:0);});
-const W=d=>d.w,H=d=>d.depth===0?40:30;
+ALL.forEach(d=>{const r=wrapName(d.data.name),pre=d.data.done?"✓ ":d.data.todo?"○ ":"";d.lines=r.lines.map((l,i)=>i?l:pre+l);d.trunc=r.cut;
+  mctx.font=fontOf(d);d.w=Math.ceil(Math.max(...d.lines.map(l=>mctx.measureText(l).width)))+(d.depth===0?36:26)+(d.data.h?16:0);});
+const W=d=>d.w,H=d=>(d.depth===0?40:30)+(d.lines.length-1)*(d.depth===0?18:16);
+const RX=d=>d.depth===0?20:15;
 const CH=d=>kids(d)?24:0;             // room for the chevron outside the pill
 const ROW=40,GAP=86;
 const off=[0];{const mw=[];ALL.forEach(d=>mw[d.depth]=Math.max(mw[d.depth]||0,d.w));for(let i=1;i<=root.height+1;i++)off[i]=off[i-1]+(mw[i-1]||120)+GAP;}
-const tree=d3.tree().nodeSize([ROW,1]).separation((a,b)=>a.parent===b.parent?1:1.2);
+const tree=d3.tree().nodeSize([ROW,1]).separation((a,b)=>Math.max(1,((H(a)+H(b))/2+10)/ROW)*(a.parent===b.parent?1:1.2));
 const linkGen=d3.linkHorizontal().x(p=>p[0]).y(p=>p[1]);
 const fill=d=>d.depth===0?"#1f2933":d.data.h?"var(--humanfill)":d.data.done?"#f2f4f6":d.depth===1?d.pal[1]:"#fff";
 const stroke=d=>d.depth===0?"#1f2933":d.data.h?"#7a6f5c":d.pal[0];
 const cutAncestor=d=>{for(let a=d.parent;a;a=a.parent)if(decOf(a)==="cut")return true;return false};
-let cur=null;
+let cur=null,curT=null;
 const visible=()=>{const v=[];root.eachBefore(d=>v.push(d));return v};
 const nodeEl=d=>gN.selectAll("g.node").filter(x=>x===d).node();
 
+// ---------- search + filter
+let FQ="",FK="",MATCH=new Set(),CTX=new Set();
+const FILT={open:d=>!kids(d)&&!covered(d),dec:reviewed,ca:d=>decOf(d)==="change"||decOf(d)==="ask",h:d=>!!d.data.h,todo:d=>!!d.data.todo,done:d=>!!d.data.done};
+const filtering=()=>!!(FQ||FK);
+const matches=d=>(!FK||FILT[FK](d))&&(!FQ||(d.data.name+"\n"+(d.data.note||"")+"\n"+d.nid).toLowerCase().includes(FQ));
+let MLIST=[];
+function computeMatches(){MATCH=new Set();CTX=new Set();MLIST=[];const fc=$("fcount"),on=filtering();fc.hidden=!on;$("fclear").hidden=!on;if(!on)return;
+  ALL.forEach(d=>{if(matches(d)){MATCH.add(d);MLIST.push(d);for(let a=d.parent;a;a=a.parent)CTX.add(a)}});
+  const n=MLIST.length,i=cur?MLIST.indexOf(cur):-1;
+  const t=!n?"No matches":i>=0?`${i+1} of ${n}`:`${n} match${n>1?"es":""}`;if(fc.textContent!==t)fc.textContent=t;}
+const faded=d=>filtering()&&!MATCH.has(d)&&!CTX.has(d);
+
 function ariaLabel(d){const dc=decOf(d);let s=d.data.name;if(d.data.h)s+=", human step";if(d.data.done)s+=", done";if(d.data.todo)s+=", to do";
-  if(dc)s+=", decision "+DEC[dc].label;if(d.data.note)s+=". "+d.data.note;return s;}
+  if(dc)s+=", decision "+DEC[dc].label;else{const c=coverOf(d);if(c)s+=", covered by "+DEC[decOf(c)].label+" on "+c.data.name;}return s;}
 
 let firstPaint=true;
 function update(src){
@@ -242,21 +376,23 @@ function update(src){
   const s0=src||root;
   const n=gN.selectAll("g.node").data(nodes,d=>d.nid);
   const en=n.enter().append("g").attr("class","node").attr("role","treeitem").attr("tabindex",-1)
-    .attr("transform",`translate(${s0.y0??s0.y??0},${s0.x0??s0.x??0})`).style("opacity",0)
+    .attr("transform",`translate(${s0.y0??s0.y??0},${s0.x0??s0.x??0})`).attr("opacity",0)
     .on("focus",(e,d)=>{if(cur!==d)select(d,{focus:false})})
     .on("click",(e,d)=>{if(!e.target.closest(".chev"))select(d)})
     .on("dblclick",(e,d)=>{if(!e.target.closest(".chev")){e.preventDefault();toggle(d)}});
   en.append("rect").attr("class","halo");
   en.append("rect").attr("class","body").on("mousemove",(e,d)=>showTip(e,d)).on("mouseleave",()=>tip.style.opacity=0);
   const hd=en.filter(d=>d.data.h).append("g").attr("class","hdot");hd.append("circle").attr("r",7).attr("fill","var(--human)");hd.append("text").attr("text-anchor","middle").attr("dy","0.35em").text("H");
-  en.append("text").attr("class",d=>"lbl l"+Math.min(d.depth,2)).attr("dy","0.35em");
+  en.append("text").attr("class",d=>"lbl l"+Math.min(d.depth,2));
   const cv=en.filter(kids).append("g").attr("class","chev").on("click",(e,d)=>{e.stopPropagation();toggle(d)});
   cv.append("circle").attr("r",9);cv.append("text").attr("text-anchor","middle").attr("dy","0.36em");
+  const ih=en.append("g").attr("class","inh");ih.append("rect").attr("rx",4).attr("height",18).attr("width",18).attr("y",-9);ih.append("text").attr("dy","0.36em").attr("x",5);
   const bg=en.append("g").attr("class","badge");bg.append("rect").attr("rx",4).attr("height",18).attr("y",-9);bg.append("text").attr("dy","0.36em");
   const all=en.merge(n);all.order();
   paint(all);
-  tr(all).attr("transform",d=>`translate(${d.y},${d.x})`).style("opacity",1);
-  tr(n.exit()).attr("transform",`translate(${s0.y},${s0.x})`).style("opacity",0).remove();
+  // opacity as an attribute, not an inline style, so the .fade / .dim classes can still win
+  tr(all).attr("transform",d=>`translate(${d.y},${d.x})`).attr("opacity",1);
+  tr(n.exit()).attr("transform",`translate(${s0.y},${s0.x})`).attr("opacity",0).remove();
   const l=gL.selectAll("path.link").data(links,d=>d.target.nid);
   const from=d=>[d.source.y+W(d.source)+CH(d.source),d.source.x];
   const LM=l.enter().append("path").attr("class","link").attr("stroke",d=>d.target.pal[0])
@@ -266,37 +402,85 @@ function update(src){
   nodes.forEach(d=>{d.x0=d.x;d.y0=d.y});
 }
 function paint(sel){
-  sel=sel||gN.selectAll("g.node");
-  sel.classed("sel",d=>d===cur).classed("cut",d=>decOf(d)==="cut").classed("dim",cutAncestor)
+  sel=sel||gN.selectAll("g.node");computeMatches();
+  sel.classed("sel",d=>d===cur).classed("cut",d=>decOf(d)==="cut").classed("dim",cutAncestor).classed("fade",faded)
     .attr("tabindex",d=>(cur?d===cur:d===root)?0:-1)
     .attr("aria-selected",d=>d===cur?"true":"false").attr("aria-level",d=>d.depth+1)
-    .attr("aria-expanded",d=>kids(d)?String(!!d.children):null).attr("aria-label",ariaLabel);
-  sel.select("rect.halo").attr("x",-5).attr("y",d=>-H(d)/2-5).attr("width",d=>W(d)+10).attr("height",d=>H(d)+10).attr("rx",d=>H(d)/2+5);
-  sel.select("rect.body").attr("y",d=>-H(d)/2).attr("height",H).attr("width",W).attr("rx",d=>H(d)/2)
+    .attr("aria-expanded",d=>kids(d)?String(!!d.children):null).attr("aria-label",ariaLabel).attr("aria-description",d=>d.data.note||null)
+    .attr("aria-setsize",d=>d.parent&&d.parent.children?d.parent.children.length:1).attr("aria-posinset",d=>d.parent&&d.parent.children?d.parent.children.indexOf(d)+1:1);
+  gL.selectAll("path.link").classed("fade",l=>faded(l.target)).classed("dim",l=>decOf(l.target)==="cut"||cutAncestor(l.target));
+  sel.select("rect.halo").attr("x",-5).attr("y",d=>-H(d)/2-5).attr("width",d=>W(d)+10).attr("height",d=>H(d)+10).attr("rx",d=>RX(d)+5);
+  sel.select("rect.body").attr("y",d=>-H(d)/2).attr("height",H).attr("width",W).attr("rx",RX)
     .attr("fill",fill).attr("stroke",stroke).attr("stroke-dasharray",d=>d.data.todo?"5 3":null);
   sel.select("g.hdot").attr("transform","translate(15,0)");
-  sel.select("text.lbl").attr("x",d=>(d.depth===0?18:13)+(d.data.h?16:0)).text(label);
+  sel.select("text.lbl").each(function(d){const x=(d.depth===0?18:13)+(d.data.h?16:0),n=d.lines.length;
+    d3.select(this).selectAll("tspan").data(d.lines).join("tspan").attr("x",x).attr("dy",(l,i)=>i?"1.2em":(0.35-(n-1)*0.6)+"em").text(l=>l);});
   sel.select("g.chev").attr("transform",d=>`translate(${W(d)+13},0)`);
   sel.select("g.chev circle").attr("stroke",d=>d.depth===0?"#1f2933":d.pal[0]);
   sel.select("g.chev text").attr("fill",d=>d.depth===0?"#1f2933":d.pal[0]).text(d=>d.children?"−":"+");
   sel.select("g.badge").style("display",d=>decOf(d)?null:"none").attr("transform",d=>`translate(${W(d)+CH(d)+8},0)`);
   sel.select("g.badge rect").attr("width",d=>{const e=entry(d);return e&&e.d&&e.t.trim()?30:18}).attr("fill",d=>{const k=decOf(d);return k?DEC[k].col:"none"});
+  sel.select("g.inh").style("display",d=>!kids(d)&&!reviewed(d)&&coverOf(d)?null:"none").attr("transform",d=>`translate(${W(d)+CH(d)+8},0)`)
+    .each(function(d){const c=coverOf(d);if(!c)return;const k=decOf(c);d3.select(this).select("rect").attr("stroke",DEC[k].col);d3.select(this).select("text").attr("fill",DEC[k].col).text(DEC[k].L);});
   sel.select("g.badge text").attr("x",4).text(d=>{const e=entry(d),k=decOf(d);if(!k)return"";return DEC[k].L+(e.d&&e.t.trim()?" ✎":"")});
+  renderOutline();
 }
-function showTip(e,d){const full=d.data.name.length>MAXC;if(!d.data.note&&!full){tip.style.opacity=0;return}
-  tip.replaceChildren(el("b",{},d.data.name),d.data.note?document.createTextNode("\n"+d.data.note):"");
+// Hover shows the whole node: where it sits, its note and your decision.
+function showTip(e,d){const k=decOf(d),en=entry(d);
+  tip.replaceChildren(...[d.depth>1?el("span",{class:"tp"},d.path.slice(1,-1).join(" › ")):null,el("b",{},d.data.name),
+    d.data.note?el("span",{class:"td"},d.data.note):null,
+    k?el("span",{class:"td"},el("b",{},DEC[k].label),en.t.trim()?": "+en.t.trim():""):null].filter(Boolean));
   const r=stage.getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top+14;if(x+310>r.width)x=r.width-310;if(y+120>r.height)y-=130;
   tip.style.left=Math.max(8,x)+"px";tip.style.top=Math.max(8,y)+"px";tip.style.opacity=1}
+
+// ---------- outline view: the same tree as an indented list, sharing open state, selection and decisions
+let OUT=false;
+const rowEl=d=>$("outline").querySelector(`.orow[data-id="${CSS.escape(d.nid)}"]`);
+let rendering=false;
+function renderOutline(){if(!OUT)return;const box=$("outline"),ae=document.activeElement,had=!!(ae&&ae.classList&&ae.classList.contains("orow"));
+  const rows=visible().map(d=>{const k=decOf(d),e=entry(d),kd=kids(d);
+    const r=el("div",{class:"orow d"+Math.min(d.depth,2),role:"treeitem","data-id":d.nid,tabindex:d===(cur||root)?0:-1,"aria-level":d.depth+1,
+        "aria-selected":d===cur?"true":"false","aria-expanded":kd?String(!!d.children):null,"aria-label":ariaLabel(d),style:`padding-left:${8+d.depth*22}px;--bc:${d.pal[0]}`,
+        onclick:ev=>{if(!ev.target.closest(".oc"))select(d)},ondblclick:ev=>{if(!ev.target.closest(".oc"))toggle(d)}},
+      el("button",{class:"oc"+(kd?"":" leaf"),type:"button",tabindex:-1,"aria-hidden":"true",onclick:ev=>{ev.stopPropagation();toggle(d)}},kd?(d.children?"−":"+"):""),
+      k?el("span",{class:"L "+DEC[k].cls},DEC[k].L):(c=>c?el("span",{class:"L Lo",style:`color:${DEC[decOf(c)].col};border-color:${DEC[decOf(c)].col}`,title:"Covered by "+DEC[decOf(c)].label+" on "+c.data.name},DEC[decOf(c)].L):null)(kd?null:coverOf(d)),
+      el("div",{class:"ob"},el("div",{class:"on"},(d.data.done?"✓ ":d.data.todo?"○ ":"")+d.data.name,d.data.h?el("span",{class:"ot"},"human"):null),
+        d.data.note?el("div",{class:"onote"},d.data.note):null,e&&e.t.trim()?el("div",{class:"otx"},e.t.trim()):null));
+    r.classList.toggle("sel",d===cur);r.classList.toggle("cut",k==="cut");r.classList.toggle("dim",cutAncestor(d));
+    r.classList.toggle("fade",faded(d));r.classList.toggle("ctx",filtering()&&!MATCH.has(d)&&CTX.has(d));
+    r.addEventListener("focus",()=>{if(!rendering&&cur!==d)select(d,{focus:false})});return r;});
+  const st=box.scrollTop;rendering=true;box.replaceChildren(...rows);box.scrollTop=st;
+  // Focus goes to the selected row, never back to the row that had it (that would undo the selection).
+  if(had){const n=rowEl(cur||root);if(n)n.focus({preventScroll:true});}rendering=false;}
+function focusNode(d){const e=OUT?rowEl(d):nodeEl(d);if(e)e.focus({preventScroll:true});}
+function setView(o,{save=true}={}){OUT=o;$("outline").hidden=!o;$("svg").style.visibility=o?"hidden":"";
+  document.querySelector(".zoom").style.display=o?"none":"";$("legend").style.display=o?"none":"";tip.style.opacity=0;
+  const b=$("view");b.setAttribute("aria-pressed",String(o));b.title=o?"Back to the map (O)":"Show the plan as an indented list with every note (O)";$("fit").disabled=o;
+  if(save){try{localStorage.setItem("canopy:view",o?"outline":"map")}catch(e){}}
+  if(o)renderOutline();else fit(false,{readable:true});
+  if(cur){focusNode(cur);ensureVisible(cur);}}
 
 // ---------- camera
 const T=()=>d3.zoomTransform(svg.node());
 function moveTo(t,anim=true){(anim&&!reduce?svg.transition().duration(DUR):svg).call(zoom.transform,t)}
-function fit(anim=true){const b=vp.node().getBBox(),w=stage.clientWidth,h=stage.clientHeight;if(!b.width)return;
-  const k=Math.min(1.15,Math.max(.15,Math.min((w-60)/b.width,(h-60)/b.height)));
-  moveTo(d3.zoomIdentity.translate((w-b.width*k)/2-b.x*k,(h-b.height*k)/2-b.y*k).scale(k),anim)}
+// Bounds come from the layout (target positions), not getBBox, so Fit is right even mid-animation.
+function bounds(){let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  visible().forEach(d=>{x0=Math.min(x0,d.y-6);x1=Math.max(x1,d.y+W(d)+CH(d)+(decOf(d)?44:6));
+    y0=Math.min(y0,d.x-H(d)/2-6);y1=Math.max(y1,d.x+H(d)/2+6);});return{x:x0,y:y0,width:x1-x0,height:y1-y0};}
+// readable: never zoom out below MINK (13px labels stay about 10px); the map then starts at its left edge,
+// centred on the selected node, and you pan for the rest. F / Fit always shows the whole map.
+const MINK=0.77;
+function fit(anim=true,{readable=false}={}){if(OUT)return;const b=bounds(),w=stage.clientWidth,h=stage.clientHeight;if(!(b.width>0))return;
+  const M=24,lg=$("legend"),fd=document.querySelector(".find"),top=M+(fd?fd.offsetHeight+6:0),bot=M+(lg&&lg.style.display!=="none"?lg.offsetHeight+10:0),rt=M+44;   // clear of the search bar, legend and zoom buttons
+  const aw=Math.max(80,w-M-rt),ah=Math.max(80,h-top-bot);
+  const k=Math.min(1.15,Math.max(.05,Math.min(aw/b.width,ah/b.height)));
+  if(readable&&k<MINK){const a=cur&&visible().includes(cur)?cur:root;
+    let tx=M-b.x*MINK;const ar=(a.y+W(a)+CH(a)+40)*MINK;if(tx+ar>w-rt)tx=(w-rt)-ar;
+    return moveTo(d3.zoomIdentity.translate(tx,top+ah/2-a.x*MINK).scale(MINK),anim);}
+  moveTo(d3.zoomIdentity.translate(M+(aw-b.width*k)/2-b.x*k,top+(ah-b.height*k)/2-b.y*k).scale(k),anim)}
 function showChildren(t,d){
   const w=stage.clientWidth,h=stage.clientHeight,M=28,ns=d.children||[];if(!ns.length)return t;
-  const x1=Math.max(...ns.map(c=>c.y+W(c)+CH(c)+40)),y0=Math.min(...ns.map(c=>c.x))-ROW/2,y1=Math.max(...ns.map(c=>c.x))+ROW/2;
+  const x1=Math.max(...ns.map(c=>c.y+W(c)+CH(c)+40)),y0=Math.min(...ns.map(c=>c.x-H(c)/2))-5,y1=Math.max(...ns.map(c=>c.x+H(c)/2))+5;
   let dx=0,dy=0;const right=t.applyX(x1),left=t.applyX(d.y);
   if(right>w-M)dx=(w-M)-right; if(left+dx<M)dx=M-left;
   const top=t.applyY(y0),bot=t.applyY(y1);
@@ -304,10 +488,15 @@ function showChildren(t,d){
   else{dy=M-top;const py=t.applyY(d.x)+dy;if(py>h-M)dy-=py-(h-M);}
   return t.translate(dx/t.k,dy/t.k);
 }
-function ensureVisible(d){const t=T(),w=stage.clientWidth,h=stage.clientHeight,M=30;
-  const x0=t.applyX(d.y),x1=t.applyX(d.y+W(d)+CH(d)+30),y=t.applyY(d.x);let dx=0,dy=0;
-  if(x1>w-M)dx=(w-M)-x1;if(x0+dx<M)dx=M-x0;if(y<M)dy=M-y+20;else if(y>h-M)dy=(h-M)-y-20;
+function ensureVisible(d){if(OUT){const r=rowEl(d);if(r)r.scrollIntoView({block:"nearest"});return}
+  const t=T(),w=stage.clientWidth,h=stage.clientHeight,M=30,fd=document.querySelector(".find"),lg=$("legend");
+  const top=M+(fd?fd.offsetHeight+10:0),bot=M+(lg&&lg.style.display!=="none"?lg.offsetHeight+10:0);
+  // Too small to read (after F): zoom to reading size around the node.
+  if(t.k<MINK*0.95){const k=MINK;return moveTo(d3.zoomIdentity.translate(w/2-(d.y+W(d)/2)*k,(top+h-bot)/2-d.x*k).scale(k));}
+  const x0=t.applyX(d.y),x1=t.applyX(d.y+W(d)+CH(d)+44),y=t.applyY(d.x);let dx=0,dy=0;
+  if(x1>w-M-44)dx=(w-M-44)-x1;if(x0+dx<M)dx=M-x0;if(y<top)dy=top-y+20;else if(y>h-bot)dy=(h-bot)-y-20;
   if(dx||dy)moveTo(t.translate(dx/t.k,dy/t.k));}
+function pulse(d){if(OUT||reduce)return;const e=nodeEl(d);if(!e)return;e.classList.remove("pulse");e.getBoundingClientRect();e.classList.add("pulse");setTimeout(()=>e.classList.remove("pulse"),800);}
 
 // ---------- actions
 function toggle(d,{user=true}={}){
@@ -315,6 +504,7 @@ function toggle(d,{user=true}={}){
   const t=T(),sx=t.applyX(d.y),sy=t.applyY(d.x),opening=!d.children;
   if(d.children){d._children=d.children;d.children=null}else{d.children=d._children;d._children=null}
   if(opening&&user)markSeen(d.depth===1?d:d.top);
+  if(user)queueSave();
   update(d);
   let nt=d3.zoomIdentity.translate(sx-d.y*t.k,sy-d.x*t.k).scale(t.k); // keep the clicked node under the cursor
   if(opening)nt=showChildren(nt,d);
@@ -322,25 +512,39 @@ function toggle(d,{user=true}={}){
   if(cur&&!visible().includes(cur))select(d,{focus:true});
 }
 function reveal(d){let changed=false;for(let a=d.parent;a;a=a.parent)if(a._children){a.children=a._children;a._children=null;changed=true}
-  if(changed)update(root);setTimeout(()=>ensureVisible(d),changed?DUR+10:0);}
+  if(changed)update(root);}
 function select(d,{focus=true}={}){
-  cur=d;if(d.depth>=2||(d.depth===1&&!kids(d)))markSeen(d.top);
+  cur=d;if(d.depth>=1)markSeen(d.top);lsSet(payload());clearTimeout(curT);curT=setTimeout(()=>{if(!sealed)post("/api/draft",payload()).catch(()=>{})},1200);
+  if(editAt==="saved")$("saved").textContent="";
   paint();renderPanel();refreshGate();
-  if(focus){const e=nodeEl(d);if(e)e.focus({preventScroll:true});}
+  if(focus)focusNode(d);
   ensureVisible(d);
 }
-function setDecision(d,k){if(!d)return;const e=store.decisions[d.nid]||{d:"",t:""};e.d=e.d===k?"":k;
+// Open the path to d and select it at once (not after the animation), so a key pressed right away acts on d.
+function goTo(d,{focus=true}={}){reveal(d);select(d,{focus});pulse(d);}
+function setDecision(d,k){if(sealed)return;if(!d){toast("Select a node first: click its label, or use the arrow keys");return}editAt="saved";const e=store.decisions[d.nid]||{d:"",t:""};e.d=e.d===k?"":k;
   if(e.d||e.t.trim())store.decisions[d.nid]=e;else delete store.decisions[d.nid];
-  markSeen(d.top);queueSave();paint();renderPanel();counts();
+  markSeen(d.top);queueSave();paint();renderPanel();counts();autoHideLegend();
   if(e.d==="change"||e.d==="ask"){$("ctext").focus();}
 }
 function nextUnreviewed(){const start=cur?cur.ord:-1;const n=ALL.length;
-  for(let i=1;i<=n;i++){const d=ALL[(start+i)%n];if(!reviewed(d)){reveal(d);setTimeout(()=>select(d),DUR+20);return}}
-  banner("Every node has a decision.");}
+  for(let i=1;i<=n;i++){const d=ALL[(start+i)%n];if(!kids(d)&&!covered(d)){goTo(d);return}}
+  toast("Every item is covered by a decision ✓");announce("Every item is covered by a decision");}
+// Enter / Shift+Enter in the search box step through matches; focus stays in the box.
+function nextMatch(dir=1){computeMatches();if(!MLIST.length){toast(filtering()?"No matches":"Type something to search");return}
+  const i=cur?MLIST.indexOf(cur):-1,o=cur?cur.ord:-1;let j;
+  if(i>=0)j=(i+dir+MLIST.length)%MLIST.length;
+  else if(dir>0){j=MLIST.findIndex(d=>d.ord>o);if(j<0)j=0;}
+  else{j=MLIST.length-1;for(let k=MLIST.length-1;k>=0;k--)if(MLIST[k].ord<o){j=k;break}}
+  goTo(MLIST[j],{focus:false});computeMatches();}
+function applyFilter(){computeMatches();
+  if(filtering()&&MATCH.size){let ch=false;MATCH.forEach(d=>{for(let a=d.parent;a;a=a.parent)if(a._children){a.children=a._children;a._children=null;ch=true}});
+    if(ch){update(root);queueSave();}else paint();
+    if(!OUT&&(ch||T().k<MINK*0.95))fit(true,{readable:true});return}
+  paint();}
 
 // ---------- side panel
-const PH={"":"Optional note on this node, or pick Keep / Cut / Change / Ask above",keep:"Optional note",cut:"Why cut it? (optional)",change:"What should change? Claude will apply this.",ask:"Your question for Claude"};
-const BTN={"":"Save note",keep:"Save Keep note",cut:"Save Cut reason",change:"Save change request",ask:"Save question"};
+const PH={"":"Optional note on this node, or pick Keep / Cut / Change / Ask above",keep:"Optional note",cut:"Why cut it? (optional)",change:"What should change? Claude will apply this. (Esc: back to the map)",ask:"Your question for Claude (Esc: back to the map)"};
 $("chips").append(...DECS.map(k=>el("button",{class:"chip",type:"button","data-k":k,"aria-pressed":"false",title:`${DEC[k].label} (${DEC[k].L})`,onclick:()=>setDecision(cur,k)},el("span",{class:"L "+DEC[k].cls},DEC[k].L),DEC[k].label)));
 function renderPanel(){
   const d=cur,box=$("nodebox");
@@ -348,36 +552,48 @@ function renderPanel(){
   else{const tags=[];if(d.data.h)tags.push("human step");if(d.data.done)tags.push("done");if(d.data.todo)tags.push("to do");if(kids(d))tags.push((d.children||d._children).length+" children");
     box.replaceChildren(...[el("div",{class:"path"},d.path.join(" › ")),el("h2",{class:"selname"},d.data.name),
       tags.length?el("div",{class:"tags"},tags.map(t=>el("span",{class:"tag"},t))):null,
-      d.data.note?el("div",{class:"note"},d.data.note):null,el("div",{class:"nid"},"id: "+d.nid)].filter(Boolean));}
+      d.data.note?el("div",{class:"note"},d.data.note):null,el("div",{class:"nid"},"id: "+d.nid),
+      kids(d)?el("div",{class:"path"},"Keep, Cut, Change or Ask here counts for everything under it that has no decision of its own."):null,
+      (c=>!reviewed(d)&&c?el("div",{class:"cov"},"Covered by ",el("b",{},DEC[decOf(c)].label)," on ",c.data.name,". Pick a decision here to override it."):null)(coverOf(d))].filter(Boolean));}
+  $("target").replaceChildren(...(d?["Decision for ",el("b",{},d.data.name)]:["Select a node to decide on it"]));
   const e=d?entry(d):null,k=e?e.d:"";
   document.querySelectorAll("#chips .chip").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.k===k));b.disabled=!d;});
   const ta=$("ctext");ta.disabled=!d;ta.value=e?e.t:"";ta.placeholder=d?PH[k]:"Select a node first";
-  $("save").textContent=BTN[k];$("save").disabled=!d;
+  $("save").disabled=!d;
   renderList();
 }
 function renderList(){
   const items=ALL.filter(reviewed);
   $("dlhead").textContent=`Your decisions (${items.length})`;
   $("dlist").replaceChildren(...(items.length?items.map(d=>{const k=decOf(d),e=entry(d);
-    return el("button",{class:"di",type:"button",onclick:()=>{reveal(d);setTimeout(()=>select(d),DUR+20)}},
-      el("span",{class:"L "+DEC[k].cls},DEC[k].L),el("span",{},d.data.name,e.t.trim()?el("span",{class:"tx"},e.t.length>90?e.t.slice(0,89)+"…":e.t):null));})
+    return el("button",{class:"di",type:"button",onclick:()=>goTo(d)},
+      el("span",{class:"L "+DEC[k].cls},DEC[k].L),el("span",{},d.data.name,e.t.trim()?el("span",{class:"tx"},e.t.trim()):null));})
     :[el("div",{class:"empty"},"None yet. Select a node and press K, X, C or A.")]));
 }
-function counts(){const n=ALL.filter(reviewed).length;let s=`Reviewed ${n}/${ALL.length}`;
-  if(CFG.gate)s+=` · Branches ${TOPS.length-missingTops().length}/${TOPS.length}`;$("progress").textContent=s;refreshGate();renderList();}
-function refreshGate(){if(!CFG.gate)return;const m=missingTops();$("approve").disabled=m.length>0;
-  $("approve").title=m.length?`Look at every top-level branch first (open it, or decide on something in it). Remaining: ${m.map(t=>t.data.name).join(", ")}`:"Approve the plan";
+const covN=()=>LEAVES.filter(covered).length;
+function counts(){const n=covN(),dn=ALL.filter(reviewed).length;let s=`Reviewed ${n}/${LEAVES.length} items`;
+  if(CFG.gate)s+=` · Branches ${TOPS.length-missingTops().length}/${TOPS.length}`;$("progress").textContent=s;
+  $("next").title=`${dn} decision${dn===1?"":"s"} so far. Items are the nodes with no children; a decision on a branch counts for everything under it that has no decision of its own. Click or press N to jump to the next node not covered yet.`;
+  refreshGate();renderList();}
+function refreshGate(){if(!CFG.gate)return;const m=missingTops();$("approve").setAttribute("aria-disabled",String(m.length>0));
+  const gh=$("gatehint"),names=m.map(t=>t.data.name);gh.hidden=!m.length||sealed;
+  if(m.length){gh.textContent=`Review ${m.length} more branch${m.length>1?"es":""}: `+(names.length>3?names.slice(0,3).join(", ")+` +${names.length-3} more`:names.join(", "));
+    gh.title="Approve unlocks once every top-level branch has been opened or selected, or has a decision. Click to open the next one. Remaining: "+names.join(", ");}
+  $("approve").title=m.length?`Look at every top-level branch first (open or select it, or decide on something in it). Remaining: ${m.map(t=>t.data.name).join(", ")}`:"Approve the plan";
   let s=$("progress").textContent.replace(/ · Branches .*$/,"");$("progress").textContent=s+` · Branches ${TOPS.length-m.length}/${TOPS.length}`;}
-$("ctext").addEventListener("input",e=>{if(!cur)return;const en=store.decisions[cur.nid]||{d:"",t:""};en.t=e.target.value.slice(0,20000);
+$("ctext").addEventListener("input",e=>{if(!cur)return;editAt="saved";const en=store.decisions[cur.nid]||{d:"",t:""};en.t=e.target.value.slice(0,20000);
   if(en.d||en.t.trim())store.decisions[cur.nid]=en;else delete store.decisions[cur.nid];queueSave();paint();counts();});
-function commit(){flushSave();$("ctext").blur();if(cur){const e=nodeEl(cur);if(e)e.focus({preventScroll:true});}}
+// Notes save as you type; Done confirms it and goes back to the map.
+async function commit(){editAt="saved";$("ctext").blur();if(cur){focusNode(cur);pulse(cur);}const ok=await flushSave();
+  if(ok){setSaved("Saved ✓ "+hhmm());announce("Saved");}else announce("Saved in this browser only");}
 $("save").onclick=commit;
 $("ctext").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();commit()}});
-$("general").value=store.general;$("general").addEventListener("input",e=>{store.general=e.target.value.slice(0,20000);queueSave();});
+$("general").value=store.general;$("general").addEventListener("input",e=>{editAt="gsaved";store.general=e.target.value.slice(0,20000);queueSave();});
+$("general").addEventListener("blur",()=>{flushSave();});
 
 // ---------- modals
 let lastFocus=null;
-function openModal(id){lastFocus=document.activeElement;$(id).hidden=false;const f=$(id).querySelector("footer .btn");if(f)f.focus();}
+function openModal(id){lastFocus=document.activeElement;$(id).hidden=false;const f=$(id).querySelector("footer .btn:not(.ghost)");if(f)f.focus();}
 function closeModal(){document.querySelectorAll(".modal").forEach(m=>m.hidden=true);if(lastFocus&&lastFocus.focus)lastFocus.focus();}
 const modalOpen=()=>[...document.querySelectorAll(".modal")].some(m=>!m.hidden);
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();closeModal()}
@@ -386,14 +602,15 @@ document.querySelectorAll(".modal").forEach(m=>m.addEventListener("keydown",e=>{
 $("close").onclick=()=>{const n=ALL.filter(reviewed).length+(store.general.trim()?1:0);
   $("cftext").textContent=n?`Claude will be told you closed the review without sending anything. Your ${n} decision${n>1?"s":""} and notes stay saved as a draft and come back when this map is opened again.`
     :"Claude will be told you closed the review without sending anything.";openModal("confirm");};
-$("cfno").onclick=closeModal;
-$("cfyes").onclick=()=>{closeModal();send("/api/close",{},"Closed without sending. Your draft is kept.")};
+$("cfno").onclick=closeModal;$("shback").onclick=closeModal;
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModal()}));
+$("cfyes").onclick=()=>{closeModal();send("/api/close",{},"close")};
 function openSheet(action){
   const items=ALL.filter(reviewed),by={};ORDER.forEach(k=>by[k]=items.filter(d=>decOf(d)===k));
   const title={submit:"Send your review to Claude",approve:"Approve this plan",request_changes:"Request changes"}[action];
   $("shh").textContent=title;const body=[];
-  body.push(el("div",{class:"counts"},ORDER.map(k=>el("span",{class:"cnt"},el("span",{class:"L "+DEC[k].cls},DEC[k].L),`${DEC[k].label} ${by[k].length}`)),
-    el("span",{class:"cnt"},`Reviewed ${items.length}/${ALL.length}`)));
+  body.push(el("div",{class:"counts"},ORDER.filter(k=>by[k].length).map(k=>el("span",{class:"cnt"},el("span",{class:"L "+DEC[k].cls},DEC[k].L),`${DEC[k].label} ${by[k].length}`)),
+    el("span",{class:"cnt"},`Reviewed ${covN()}/${LEAVES.length} items`)));
   const empty=[...by.change,...by.ask].filter(d=>!entry(d).t.trim());
   if(empty.length)body.push(el("div",{class:"warn"},`${empty.length} Change/Ask decision${empty.length>1?"s have":" has"} no text, so Claude will have to guess: `+empty.map(d=>d.data.name).join(", ")));
   const miss=missingTops();
@@ -402,38 +619,72 @@ function openSheet(action){
   if(action==="request_changes"&&!by.change.length&&!by.cut.length&&!by.ask.length&&!by.note.length&&!store.general.trim())body.push(el("div",{class:"warn"},"You haven't asked for any change yet. Add a Change, Cut or Ask, or a general note."));
   if(action==="submit"&&!items.length&&!store.general.trim())body.push(el("div",{class:"warn"},"Nothing to send yet: Claude will receive an empty review."));
   ORDER.forEach(k=>{if(!by[k].length)return;body.push(el("h3",{class:"h3"},`${DEC[k].label} (${by[k].length})`));
-    body.push(el("div",{class:"dl"},by[k].map(d=>el("button",{class:"di",type:"button",title:"Edit on the map",onclick:()=>{closeModal();reveal(d);setTimeout(()=>select(d),DUR+20)}},
+    body.push(el("div",{class:"dl"},by[k].map(d=>el("button",{class:"di",type:"button",title:"Edit on the map",onclick:()=>{closeModal();goTo(d)}},
       el("span",{class:"L "+DEC[k].cls},DEC[k].L),el("span",{},d.path.slice(1).join(" › ")||d.data.name,entry(d).t.trim()?el("span",{class:"tx"},entry(d).t):null)))));});
   if(store.general.trim())body.push(el("h3",{class:"h3"},"General note"),el("div",{class:"note"},store.general));
   $("shbody").replaceChildren(...body);
   const go=$("shgo");go.textContent={submit:"Send to Claude",approve:"Approve",request_changes:"Send change requests"}[action];
   go.disabled=action==="approve"&&miss.length>0;
-  go.onclick=()=>{closeModal();send("/api/submit",Object.assign({action},payload()),{submit:"Sent to Claude.",approve:"Approved. Claude can go ahead.",request_changes:"Change requests sent to Claude."}[action]);};
+  go.onclick=()=>{closeModal();send("/api/submit",Object.assign({action},payload()),action);};
   openModal("sheet");
 }
-$("submit").onclick=()=>openSheet("submit");$("approve").onclick=()=>openSheet("approve");$("reqchg").onclick=()=>openSheet("request_changes");
+// ---------- export (hand the decisions to another session without sending)
+function decList(){return ALL.filter(reviewed).map(d=>({id:d.nid,path:d.path,name:d.data.name,decision:decOf(d),text:entry(d).t.trim()}));}
+function exportMd(){const L=decList(),cn=ORDER.map(k=>[k,L.filter(x=>x.decision===k).length]).filter(x=>x[1]).map(([k,n])=>`${n} ${DEC[k].label.toLowerCase()}`).join(", ");
+  const o=[`# ${CFG.display}: ${DOC.title}`,"","Status: DRAFT (not sent yet)",`Reviewed: ${covN()}/${LEAVES.length} items with ${L.length} decision${L.length===1?"":"s"}`+(cn?` (${cn})`:"")];
+  if(ALL.some(d=>kids(d)&&ruled(d)))o.push("A decision on a branch applies to everything under it that has no decision of its own.");o.push("");
+  ORDER.forEach(k=>{const it=L.filter(x=>x.decision===k);if(!it.length)return;o.push(`## ${DEC[k].label.toUpperCase()} (${it.length})`);
+    it.forEach(x=>o.push(`- \`${x.id}\` ${x.path.join(" › ")}`+(x.text?" — "+x.text.split("\n").join("\n    "):"")));o.push("");});
+  if(store.general.trim())o.push("## General",store.general.trim(),"");
+  if(!L.length&&!store.general.trim())o.push("(No decisions or notes yet.)","");
+  return o.join("\n").trimEnd()+"\n";}
+function exportJson(){const L=decList(),st={reviewed:L.length,items:LEAVES.length,items_covered:covN(),nodes:ALL.length};ORDER.forEach(k=>st[k]=L.filter(x=>x.decision===k).length);
+  return JSON.stringify({version:1,tool:"canopy",status:"draft",title:DOC.title,decisions:L,general:store.general.trim(),stats:st},null,2)+"\n";}
+function flash(b,t){const o=b.dataset.label||(b.dataset.label=b.textContent);b.style.minWidth=b.offsetWidth+"px";b.textContent=t;clearTimeout(b._t);b._t=setTimeout(()=>{b.textContent=o},1600);}
+$("exmd").onclick=async()=>{const md=exportMd(),b=$("exmd");
+  try{await navigator.clipboard.writeText(md);flash(b,"✓ Copied");}
+  catch(e){const ta=el("textarea",{class:"sr"});ta.value=md;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(x){}ta.remove();flash(b,ok?"✓ Copied":"Copy failed");}};
+$("exjson").onclick=()=>{const blob=new Blob([exportJson()],{type:"application/json"}),u=URL.createObjectURL(blob);
+  const name=(DOC.title||"review").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"review";
+  const a=el("a",{href:u,download:name+".review.json"});document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);flash($("exjson"),"✓ Saved");};
+$("submit").onclick=()=>openSheet("submit");$("approve").onclick=()=>{const m=missingTops();
+  if(m.length){toast(`Approve unlocks after you look at ${m.length} more branch${m.length>1?"es":""}: ${m.map(t=>t.data.name).slice(0,3).join(", ")}${m.length>3?"…":""}. Opening the next one.`,4500);$("gatehint").click();return;}
+  openSheet("approve");};$("reqchg").onclick=()=>openSheet("request_changes");
+const DONE={submit:{t:"Sent to Claude",s:"Your review is back in the Claude Code session.",m:"✓",c:"var(--keep)"},
+  approve:{t:"Approved",s:"Claude can go ahead with the plan.",m:"✓",c:"var(--keep)"},
+  request_changes:{t:"Change requests sent",s:"Claude will revise the plan and may open it for another round.",m:"↻",c:"var(--change)"},
+  close:{t:"Closed without sending",s:"Nothing was sent. Your draft is kept and comes back when this map opens again.",m:"–",c:"var(--note)"}};
+function showDone(kind){const D=DONE[kind];$("donemsg").textContent=D.t;$("donesub").textContent=D.s;
+  const mk=$("donemark");mk.textContent=D.m;mk.style.background=D.c;
+  const items=ALL.filter(reviewed);
+  $("donecounts").replaceChildren(...(kind==="close"?[]:ORDER.map(k=>[k,items.filter(d=>decOf(d)===k).length]).filter(x=>x[1]).map(([k,n])=>
+    el("span",{class:"cnt"},el("span",{class:"L "+DEC[k].cls},DEC[k].L),`${DEC[k].label} ${n}`))));
+  $("donebox").hidden=false;$("gatehint").hidden=true;$("toast").hidden=true;
+  document.querySelector(".app").inert=true;document.querySelectorAll(".modal").forEach(m=>m.inert=true);$("donemsg").focus();announce(D.t+". "+D.s);}
 async function send(url,body,msg){
-  const btns=["submit","approve","reqchg","close"].map($);btns.forEach(b=>b.disabled=true);
+  const btns=["submit","approve","reqchg","close"].map($);btns.forEach(b=>b.disabled=true);clearTimeout(qT);
+  if(msg!=="close")toast("Sending to Claude…",8000);
   try{await flushSave();
     const r=await post(url,body);
-    if(r.status===409){const j=await r.json().catch(()=>({}));throw new Error("Approve needs every top-level branch looked at first: "+(j.missing||[]).map(id=>byId.get(id)?byId.get(id).data.name:id).join(", ")+".");}
+    if(r.status===409){const j=await r.json().catch(()=>({}));if(j.status){sealed=true;clearInterval(hbTimer);$("toast").hidden=true;banner("This review already ended ("+j.status+"), so nothing more was sent. Your draft is kept.");return;}throw new Error("Approve needs every top-level branch looked at first: "+(j.missing||[]).map(id=>byId.get(id)?byId.get(id).data.name:id).join(", ")+".");}
     if(!r.ok)throw new Error("The review server answered "+r.status+".");
     sealed=true;clearInterval(hbTimer);
     if(url!=="/api/close"){try{localStorage.removeItem("mmr:"+CFG.draftKey)}catch(e){}}
-    $("donemsg").textContent=msg;$("donebox").hidden=false;}
-  catch(e){btns.forEach(b=>b.disabled=false);refreshGate();
+    showDone(msg);}
+  catch(e){btns.forEach(b=>b.disabled=false);refreshGate();$("toast").hidden=true;
     const m=e&&e.message&&!/fetch|network/i.test(e.message)?e.message:"Couldn't reach the review server. Is the Claude session still running?";
-    banner(m+" Your work is saved.",()=>{$("banner").hidden=true;send(url,body,msg)});}
+    banner(m+" Your work is saved in this browser.",()=>{$("banner").hidden=true;send(url,body,msg)});}
 }
 
 // ---------- keyboard
 document.addEventListener("keydown",e=>{
   if(modalOpen()||sealed)return;
   const tg=e.target,tag=tg.tagName;
-  if(tag==="TEXTAREA"||tag==="INPUT"){if(e.key==="Escape"){tg.blur();if(cur){const n=nodeEl(cur);if(n)n.focus()}}return;}
+  if(tag==="TEXTAREA"||tag==="INPUT"||tag==="SELECT"){if(e.key==="Escape"){tg.blur();if(cur)focusNode(cur)}return;}
   if(e.ctrlKey||e.metaKey||e.altKey)return;
-  if(tag==="BUTTON"&&(e.key==="Enter"||e.key===" "))return;
-  const v=visible(),d=cur||root,i=v.indexOf(d);let h=true;
+  if(tg.closest&&tg.closest("button,summary,a,select")&&(e.key==="Enter"||e.key===" "))return;
+  // While a search or filter is on, arrows move only through what is shown.
+  const v=visible().filter(x=>!faded(x)||x===cur),d=cur||root,i=v.indexOf(d);let h=true;
   switch(e.key){
     case"ArrowDown":select(v[Math.min(v.length-1,i+1)]||root);break;
     case"ArrowUp":select(v[Math.max(0,i-1)]||root);break;
@@ -448,18 +699,43 @@ document.addEventListener("keydown",e=>{
     case"c":case"C":setDecision(cur,"change");break;
     case"a":case"A":setDecision(cur,"ask");break;
     case"n":case"N":nextUnreviewed();break;
-    case"f":case"F":fit();break;
-    case"+":case"=":svg.transition().duration(200).call(zoom.scaleBy,1.25);break;
-    case"-":svg.transition().duration(200).call(zoom.scaleBy,0.8);break;
+    case"f":case"F":if(OUT)toast("Fit works on the map. Press O to go back to it.");else fit();break;
+    case"o":case"O":setView(!OUT);break;
+    case"/":$("q").focus();$("q").select();break;
+    case"+":case"=":zoomBy(1.25);break;
+    case"-":zoomBy(0.8);break;
     default:h=false;}
   if(h)e.preventDefault();
 });
 $("next").onclick=nextUnreviewed;
-$("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});update(root);setTimeout(()=>fit(),DUR+20)};
-$("collapse").onclick=()=>{ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null}});if(cur&&cur.depth>1)cur=cur.top;update(root);paint();renderPanel();setTimeout(()=>fit(),DUR+20)};
+$("gatehint").onclick=()=>{const t=missingTops()[0];if(!t)return;if(t._children)toggle(t);else markSeen(t);select(t);};
+function zoomBy(f){if(OUT){toast("Zoom works on the map. Press O to go back to it.");return}(reduce?svg:svg.transition().duration(200)).call(zoom.scaleBy,f);}
+// Expand all opens every branch, so in a gate review each top-level branch counts as looked at.
+$("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});TOPS.forEach(t=>store.seen.add(t.nid));update(root);queueSave();counts();
+  fit(true,{readable:true});let hinted=null;try{hinted=sessionStorage.getItem("canopy:exphint")}catch(e){}
+  if(!OUT&&visible().length>40&&!hinted){toast("Showing everything at reading size: drag to pan, F for the whole map, O for a list",5000);try{sessionStorage.setItem("canopy:exphint","1")}catch(e){}}};
+$("collapse").onclick=()=>{ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null}});if(cur&&cur.depth>1)cur=cur.top;update(root);paint();renderPanel();queueSave();fit(true,{readable:true})};
 $("fit").onclick=()=>fit();
-$("zin").onclick=()=>svg.transition().duration(200).call(zoom.scaleBy,1.25);
-$("zout").onclick=()=>svg.transition().duration(200).call(zoom.scaleBy,0.8);
+$("view").onclick=()=>setView(!OUT);
+let qT=null;
+$("q").addEventListener("input",e=>{clearTimeout(qT);qT=setTimeout(()=>{FQ=e.target.value.trim().toLowerCase();applyFilter();},180);});
+$("q").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();clearTimeout(qT);FQ=e.target.value.trim().toLowerCase();nextMatch(e.shiftKey?-1:1);}
+  else if(e.key==="ArrowDown"&&cur){e.preventDefault();focusNode(cur);}
+  else if(e.key==="Escape"&&(e.target.value||FK)){e.preventDefault();e.stopPropagation();clearFilter();}});
+function clearFilter(){$("q").value="";FQ="";$("flt").value="";FK="";applyFilter();}
+$("fclear").onclick=()=>{clearFilter();$("q").focus();};
+$("flt").addEventListener("change",e=>{FK=e.target.value;applyFilter();});
+$("zin").onclick=()=>zoomBy(1.25);
+$("zout").onclick=()=>zoomBy(0.8);
 
-update(root);fit(false);renderPanel();counts();
+const LGK="canopy:legend";
+(function(){const lg=$("legend");let v=null;try{v=localStorage.getItem(LGK)}catch(e){}
+  const want=v?v==="open":stage.clientHeight>=420;if(want!==lg.open){lg.dataset.auto="1";lg.open=want;}
+  lg.addEventListener("toggle",()=>{if(lg.dataset.auto){delete lg.dataset.auto;return}try{localStorage.setItem(LGK,lg.open?"open":"closed")}catch(e){}});})();
+function autoHideLegend(){const lg=$("legend");let v=null;try{v=localStorage.getItem(LGK)}catch(e){}if(lg.open&&!v){lg.dataset.auto="1";lg.open=false;}}
+update(root);fit(false,{readable:true});renderPanel();counts();
+(function(){let v=null;try{v=localStorage.getItem("canopy:view")}catch(e){}if(v==="outline")setView(true,{save:false});
+  // Pick up where you left off: reselect the node you were on.
+  const d=restoredCur&&byId.get(restoredCur);if(d&&d!==root){reveal(d);select(d,{focus:false});}})();
 </script></body></html>

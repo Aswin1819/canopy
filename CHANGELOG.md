@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.1.0 (2026-11-17)
+Readability and gate fixes found while recording the demo, and fixes from a real review of a 105-node map.
+
+### Large maps
+- Expand all, Collapse and the first view fit at a readable zoom (labels stay about 10 px or larger) and you pan for the rest; F / Fit still shows the whole map.
+- Outline view (button or `O`): the same tree as an indented list with each node's note inline. It shares open branches, selection and decisions with the map and is remembered.
+- Search (`/`) and a filter: not reviewed yet, with my decision, Change or Ask, human steps, to do, done. Matching branches open, the rest fades, Enter jumps to the next match.
+- Hovering any node shows its path, note and your decision.
+- Progress counts end items (nodes with no children). Keep, Cut, Change or Ask on a branch counts for everything under it that has no decision of its own, so one K keeps the rest of a branch. `N` jumps to the next node not covered yet.
+
+### Fixes
+- Jumping with `N`, the decision list or the send sheet selected the node only after the animation, so a key pressed right away went to the previous node (and could clear its decision). Selection is now immediate, and the composer names the node a decision applies to.
+- The header's Close / Send / Approve buttons stay pinned on the right when the window narrows; the layout stacks only below 640 px.
+
+### Send step
+- Copy as Markdown and Download JSON in the send sheet, to hand the decisions to another session.
+- "Back to the map" closes the send sheet (it did nothing), and so does a click outside it. Zero counts are hidden.
+
+### Feedback for every action (from a design, code, e2e and accessibility review)
+- Notes save as you type; the button is now **Done** (Ctrl+Enter), which shows "Saved ✓ 14:02" and pulses the node. The save status shows next to what you last edited, the general note included.
+- Short notices on the map for: every item covered, "Select a node first", sending, the Expand all hint (once per session), and Fit or zoom pressed in the outline.
+- Items covered by a branch decision show a hollow badge; the panel says "Covered by Keep on Backend".
+- A locked Approve says what is left and opens the next branch. In a gate review, Expand all, selecting a top-level branch, or a decision on the root count as looking.
+- Losing the server shows a banner and "Reconnected" when it is back; a review restarted by Claude says to open the new link. Requests time out after 5 s.
+- Search: Enter and Shift+Enter step through matches ("3 of 14") with focus kept in the box; Esc or Clear resets search and filter. Fading on the map works (it was overridden by the entry animation), links fade too, and the selected node stays visible.
+- Selecting a node when zoomed out zooms back to reading size; nodes no longer hide under the search bar or legend.
+- Drafts keep the newer of the server and browser copy (edits made while the server was down survive a restart) and reselect the node you were on.
+- The server answers 409 to a second finish instead of a silent OK, and the page says the review already ended.
+
+### Layout and accessibility
+- The composer sits right under the selected node (shorter Tab path, no dead space); on phones it comes first and stays pinned, the header is compact and its actions get their own row.
+- Keyboard: the legend opens with Enter or Space (Space used to collapse the map); arrows skip filtered-out rows; the outline no longer loses or bounces focus.
+- Screen readers: quieter live regions, node notes as descriptions, set size and position, "covered by" in labels, and a modal end screen with focus on its heading.
+- Higher contrast for nodes under a Cut, and reduced motion also covers zoom.
+
+### Map
+- Long node labels wrap to two lines (balanced at a word break, hard break for very long words) instead of cutting at 34 characters; only text past about 70 characters gets "…", and the full name is in the tooltip and panel.
+- Fit fits every visible node: bounds come from the layout rather than the mid-animation SVG box, it keeps clear of the legend and zoom buttons, and it can zoom out further (min 5%).
+- The legend opens on first use, folds away after your first decision, and remembers whether you opened or closed it.
+- A restored draft reopens the branches that were open, so the map matches the "Branches n/N" counter (older drafts reopen the branches already looked at).
+
+### Panel and gate
+- Larger side-panel type (15 px base, 18 px node title); decision notes show in full and wrap.
+- With `--gate`, a hint next to Approve says what is left ("Review 2 more branches: Database, Rollout"); clicking it opens the next one.
+- End screens (Sent, Approved, Change requests sent, Closed) are full-screen, large and high-contrast, colour-coded, with a count per decision.
+
+### Agent side
+- Drafts also store `open` (ids of expanded nodes).
+- Result stats add `items`, `items_covered` and `on_branches`; the Markdown says "Reviewed: 60/83 items with 18 decisions" and, when a branch was ruled on, that the decision applies to everything under it.
+
 ## 1.0.0 (2026-11-16)
 First plugin release, evolved from the `canopy` user skill.
 

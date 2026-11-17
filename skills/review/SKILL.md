@@ -10,7 +10,7 @@ A local review loop. The server (Python 3.8+ stdlib, bundled d3, no network) ser
 
 ## Review or gate?
 - **Review** (default): you want feedback on a structure. The person sends Keep / Cut / Change / Ask decisions and notes. Status `submitted`.
-- **`--gate`**: you need sign-off before doing the work (writing code, sending, publishing). The page shows **Approve** and **Request changes**. Approve unlocks only after every top-level branch has been opened or ruled on. Do not start the work until you get `approved`.
+- **`--gate`**: you need sign-off before doing the work (writing code, sending, publishing). The page shows **Approve** and **Request changes**. Approve unlocks only after every top-level branch has been opened, selected or ruled on (Expand all counts; a decision on the root covers all). Do not start the work until you get `approved`.
 - Add `--json` when you will act on many decisions (recommended); Markdown is the default.
 
 ## 1. Write the tree
@@ -37,7 +37,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh" <file> --data-dir "${CLAUDE_PLUGI
 
 ## 3. Wait, then act on the result
 Don't poll or kill the task; you are notified when it exits. JSON shape:
-`{status, decisions:[{id, path, name, decision, text}], general, stats}`, decisions in tree order.
+`{status, decisions:[{id, path, name, decision, text}], general, stats}`, decisions in tree order. A decision on a branch applies to everything under it that has no decision of its own (a child's own decision wins). `stats.items_covered`/`stats.items` count end items (nodes with no children) covered that way.
 
 | status | exit | what to do |
 |---|---|---|

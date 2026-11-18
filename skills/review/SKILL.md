@@ -33,7 +33,7 @@ Bash tool with `run_in_background: true` and `timeout: 7200000`:
 ```
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json [--gate] [--export-plan PLAN.md]
 ```
-(PowerShell: `& "${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json`.) The launcher picks `python3`, `python` or `py -3`. Read the first line of the task output once to get the URL (`Mind map review ready: http://127.0.0.1:PORT/s/TOKEN/`), give it to the person and say: click a label to select, `+` to open, K / X / C / A to decide, add text for Change and Ask, then Review & send (or Approve / Request changes).
+(PowerShell: `& "${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json`.) The launcher picks `python3`, `python` or `py -3`. Read the first line of the task output once to get the URL (`Mind map review ready: http://127.0.0.1:PORT/s/TOKEN/`), give it to the person and say: click a label to select, `+` to open, K / X / C / A to decide, add text for Change and Ask, then Review & send (or Approve / Request changes). Each plan file keeps the same URL on every round (same port and token), so for a second round edit the same file and re-run the same command; the tab left open on the last round offers "Open the next round" by itself.
 
 ## 3. Wait, then act on the result
 Don't poll or kill the task; you are notified when it exits. JSON shape:
@@ -42,7 +42,7 @@ Don't poll or kill the task; you are notified when it exits. JSON shape:
 | status | exit | what to do |
 |---|---|---|
 | `approved` | 0 | Go ahead. Decisions are guidance: apply Change/Cut, answer Ask, as part of the work. |
-| `changes_requested` | 0 | Don't start. Revise: apply each `change`, remove each `cut`, answer each `ask` in chat, update the tree file, offer to re-open it. |
+| `changes_requested` | 0 | Don't start. Revise: apply each `change`, remove each `cut`, answer each `ask` in chat, update the same tree file, offer to re-open it (same command, same URL). |
 | `submitted` | 0 | Act on each decision the same way; acknowledge `keep` and `note` briefly. |
 | `closed` | 0 | The person closed without sending. Ask in chat what they want; don't assume approval. |
 | `closed_tab` | 4 | Tab closed or lost. Drafts are kept: re-run the same command if they want to continue. |

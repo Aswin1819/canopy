@@ -40,10 +40,11 @@ DISPLAY_NAME = "Canopy"
 ENV_PREFIX = "CANOPY_"            # CANOPY_PORT, CANOPY_BROWSER, CANOPY_DATA_DIR
 FALLBACK_DATA_DIR = Path.home() / ("." + TOOL_NAME)
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 MAX_BODY = 1024 * 1024
 MAX_TEXT = 20000
 MAX_OPEN = 5000
+ROUND_PORT_BASE, ROUND_PORT_SPAN = 7700, 300   # default port per plan file: 7700-7999, random if taken
 DECISIONS = ("keep", "cut", "change", "ask")
 TOKEN_HEADER = "X-Canopy-Token"
 
@@ -362,6 +363,12 @@ def draft_path(ddir, source, title):
     return Path(ddir) / "drafts" / f"{h}.json"
 
 
+def round_path(ddir, source):
+    """Per plan file (not per title, which may change between rounds): the port and token it is served on."""
+    h = hashlib.sha256(str(Path(source).resolve()).encode("utf-8")).hexdigest()[:20]
+    return Path(ddir) / "rounds" / f"{h}.json", h
+
+
 def read_draft(p):
     try:
         d = json.loads(Path(p).read_text(encoding="utf-8"))
@@ -398,9 +405,18 @@ def gate_missing(doc, payload):
 class Session:
     def __init__(self, doc, source, args):
         self.doc, self.source, self.args = doc, source, args
-        self.token = secrets.token_urlsafe(24)
         self.ddir = data_dir(args.data_dir)
         self.draft_file = draft_path(self.ddir, source, doc["title"])
+        # Same plan file, same address: every review round reuses the token (and, in main, the port), so a tab
+        # left open on the last round can find the next one.
+        self.round_file, rh = round_path(self.ddir, source)
+        prev = read_draft(self.round_file) or {}
+        tok = prev.get("token")
+        self.token = tok if isinstance(tok, str) and re.fullmatch(r"[A-Za-z0-9_-]{24,64}", tok) else secrets.token_urlsafe(24)
+        p = prev.get("port")
+        self.port_hint = p if isinstance(p, int) and 1024 <= p <= 65535 else ROUND_PORT_BASE + int(rh, 16) % ROUND_PORT_SPAN
+        self.inst = secrets.token_hex(6)   # this process: a finished tab tells the next round by a different one
+        self.rev = hashlib.sha256(json.dumps(doc, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
         self.done = threading.Event()
         self.status, self.payload = None, None
         self.last_hb = None
@@ -417,7 +433,7 @@ class Session:
         draft = read_draft(self.draft_file)
         cfg = {"token": self.token, "gate": bool(self.args.gate), "hb": int(self.args.heartbeat_sec * 1000),
                "draft": draft, "draftKey": self.draft_file.stem, "tool": TOOL_NAME, "display": DISPLAY_NAME,
-               "header": TOKEN_HEADER, "version": VERSION}
+               "header": TOKEN_HEADER, "version": VERSION, "rev": self.rev, "inst": self.inst}
         doc = {k: v for k, v in self.doc.items() if not k.startswith("_")}
 
         def island(o):
@@ -476,6 +492,9 @@ def make_handler(sess):
                 html, csp = sess.page()
                 return self._send(200, html, "text/html", {"Content-Security-Policy": csp,
                                                            "X-Frame-Options": "DENY"})
+            if p == f"/s/{sess.token}/round":
+                # A finished tab polls this to find the next round of the same plan; it does not count as a heartbeat.
+                return self._send(200, json.dumps({"rev": sess.rev, "inst": sess.inst}))
             return self._err(404, "not found")
 
         def do_POST(self):
@@ -518,7 +537,7 @@ def make_handler(sess):
             path = self.path.split("?", 1)[0]
             if path == "/api/heartbeat":
                 sess.last_hb = time.monotonic()
-                return self._send(200, '{"ok":true}')
+                return self._send(200, json.dumps({"ok": True, "rev": sess.rev}))
             if path == "/api/draft":
                 sess.last_hb = time.monotonic()
                 try:
@@ -604,7 +623,14 @@ def main(argv=None):
         warn(w)
     try:
         sess = Session(doc, a.source, a)
-        srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(sess))
+        srv = None
+        if not a.port:  # this plan's usual port first, so the URL stays the same between rounds
+            try:
+                srv = ThreadingHTTPServer(("127.0.0.1", sess.port_hint), make_handler(sess))
+            except OSError:
+                srv = None
+        if srv is None:
+            srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(sess))
     except OSError as e:
         print(f"{TOOL_NAME}: cannot start server on 127.0.0.1:{a.port}: {e}", file=sys.stderr)
         return 2
@@ -613,6 +639,10 @@ def main(argv=None):
         return 2
     srv.daemon_threads = True
     sess.port = srv.server_address[1]
+    try:
+        write_draft(sess.round_file, {"token": sess.token, "port": sess.port, "source": str(Path(a.source).resolve())})
+    except OSError as e:
+        warn(f"could not remember this plan's address: {e}")
     url = f"http://127.0.0.1:{sess.port}/s/{sess.token}/"
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     print(f"{DISPLAY_NAME} ready: {url}", file=sys.stderr, flush=True)

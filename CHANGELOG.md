@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.1 (2026-11-18)
+Fixes from a full review done with the Claude in Chrome extension, and a stable link between review rounds.
+
+### Same link every round
+- Each plan file is served at the same address on every round (same port and token, kept in the data folder). Before, every run picked a new random port and token, so when Claude revised the plan and opened it again you got a new link and the old tab pointed at nothing.
+- The finished tab now watches that address and shows **Open the next round** when Claude opens the plan again. An open tab whose plan Claude changed offers a reload.
+
+### Fixes
+- The note box is a fresh element for each node, so the browser's undo (Ctrl+Z) can no longer bring back another node's text and save it here.
+- K, X, C and A all leave focus on the map; C and A no longer jump into the note box, so typing a note after X can't fire shortcuts on other nodes. Each decision shows a notice ("Cut: Fire safety NOC · Enter to add a note · U to undo"); **U** or Ctrl+Z on the map undoes the last decision.
+- The hover tooltip no longer shows a decision you just removed.
+- Selecting, opening branches and filtering save quietly: "Draft saved" appears only after you change something.
+- The outline starts below the search bar whatever its height.
+- The legend opens only on your first visit (when there is room) and stays closed after that unless you open it.
+- Choosing a filter moves the map to the matches (all of them when they fit at reading size).
+- Shift+N goes to the previous item without a decision.
+
 ## 1.1.0 (2026-11-17)
 Readability and gate fixes found while recording the demo, and fixes from a real review of a 105-node map.
 

@@ -220,6 +220,24 @@ class TestFlows(ServerCase):
         code, out, _ = s.finish()
         self.assertEqual(json.loads(out)["status"], "approved")
 
+    def test_same_plan_same_address_between_rounds(self):
+        s1 = self.start("--json")
+        st, body, _ = s1.req("GET", f"/s/{s1.token}/round")
+        self.assertEqual(st, 200)
+        rev1 = json.loads(body)["rev"]
+        st, body, _ = s1.post("/api/heartbeat", {})
+        self.assertEqual(json.loads(body)["rev"], rev1)
+        s1.post("/api/submit", {"action": "submit", "decisions": {}})
+        s1.finish()
+        # Round 2 of the same file (revised): same port and token, new revision.
+        tree2 = json.loads(json.dumps(TREE))
+        tree2["root"]["children"].append({"name": "Rollout"})
+        s2 = self.start("--json", tree=tree2)
+        self.assertEqual((s2.port, s2.token), (s1.port, s1.token))
+        st, body, _ = s2.req("GET", f"/s/{s2.token}/round")
+        self.assertNotEqual(json.loads(body)["rev"], rev1)
+        self.assertEqual(s2.req("GET", "/s/wrong-token/round")[0], 404)
+
     def test_close_keeps_draft(self):
         s = self.start("--json")
         st, _, _ = s.post("/api/draft", {"decisions": {"docs": {"d": "keep", "t": "x"}}, "general": "g", "seen": ["docs"],

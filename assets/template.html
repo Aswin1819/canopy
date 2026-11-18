@@ -142,6 +142,8 @@ textarea[disabled]{background:var(--chip)}
 .done .dhint{font-size:16px;color:var(--muted);margin:4px 0 0}
 .done .counts{justify-content:center}.done .cnt{font-size:15px;padding:5px 12px}.done .cnt .L{width:20px;height:20px;font-size:12px}
 .done[hidden]{display:none}
+.nextround{display:flex;flex-direction:column;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:14px 18px;background:#eef4fb}
+.nextround[hidden]{display:none} .nextround p{margin:0;font-size:16px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:1250px) and (min-width:641px){.chip{padding:6px 4px;font-size:13px;gap:4px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -195,7 +197,7 @@ textarea[disabled]{background:var(--chip)}
         <div class="lg"><span><span class="L Lk">K</span>Keep</span><span><span class="L Lx">X</span>Cut</span><span><span class="L Lc">C</span>Change</span><span><span class="L La">A</span>Ask</span><span><span class="L Ln">✎</span>Note</span></div>
         <div class="lg"><span>✓ done</span><span><span class="sw" style="border-style:dashed"></span>○ todo</span><span><span class="L" style="background:var(--human);border-radius:50%">H</span>human step</span><span>struck = cut</span></div>
         <div class="lg"><span><span class="L Lo" style="color:var(--keep);border-color:var(--keep)">K</span>covered by a branch decision</span></div>
-        <div class="lg path">Click a label to select · click + to open · ←↑↓→ move · Space open · Enter write · Ctrl+Enter done · N next · F whole map · O outline · / search</div>
+        <div class="lg path">Click a label to select · click + to open · ←↑↓→ move · Space open · Enter write · Ctrl+Enter done · U undo · N / Shift+N next / previous · F whole map · O outline · / search</div>
         <div class="lg path">Items are the end points of the tree. A decision on a branch counts for everything under it that has no decision of its own.</div>
       </details>
       <div class="zoom"><button class="btn" id="zin" type="button" aria-label="Zoom in">+</button><button class="btn" id="zout" type="button" aria-label="Zoom out">−</button></div>
@@ -229,7 +231,8 @@ textarea[disabled]{background:var(--chip)}
   <footer><button class="btn ghost ex" id="exmd" type="button" title="Copy the decisions as Markdown, to paste into another session">⧉ Copy as Markdown</button><button class="btn ghost ex" id="exjson" type="button" title="Save the decisions as a JSON file">⤓ Download JSON</button><span class="sp"></span><button class="btn" id="shback" type="button">Back to the map</button><button class="btn primary" id="shgo" type="button"></button></footer>
 </div></div>
 <div class="sr" id="announce" role="status"></div>
-<div class="done" id="donebox" hidden><div class="donecard"><div class="donemark" id="donemark" aria-hidden="true">✓</div><h2 id="donemsg" tabindex="-1">Sent to Claude.</h2><p class="dsub" id="donesub"></p><div class="counts" id="donecounts"></div><p class="dhint">You can close this tab and go back to Claude Code.</p></div></div>
+<div class="done" id="donebox" hidden><div class="donecard"><div class="donemark" id="donemark" aria-hidden="true">✓</div><h2 id="donemsg" tabindex="-1">Sent to Claude.</h2><p class="dsub" id="donesub"></p><div class="counts" id="donecounts"></div><p class="dhint" id="dhint">You can close this tab and go back to Claude Code. If Claude opens this plan again, this page will offer the new round.</p>
+  <div class="nextround" id="nextround" hidden><p id="nextmsg"></p><button class="btn primary" id="opennext" type="button">Open the next round</button></div></div></div>
 <script nonce="__NONCE__">/*__D3__*/</script>
 <script nonce="__NONCE__">
 "use strict";
@@ -284,7 +287,7 @@ const ruled=d=>{const e=entry(d);return!!(e&&e.d)};
 const covered=d=>{if(reviewed(d))return true;for(let a=d.parent;a;a=a.parent)if(ruled(a))return true;return false};
 const LEAVES=ALL.filter(d=>!kids(d));
 const coverOf=d=>{for(let a=d.parent;a;a=a.parent)if(ruled(a))return a;return null};
-function markSeen(top){if(top&&!store.seen.has(top.nid)){store.seen.add(top.nid);queueSave();if(typeof counts==="function"&&$("progress"))counts();}}
+function markSeen(top){if(top&&!store.seen.has(top.nid)){store.seen.add(top.nid);queueSave(true);if(typeof counts==="function"&&$("progress"))counts();}}
 // Gate: a top-level branch counts once it was opened or selected, something in it has a decision, or the root has one.
 const missingTops=()=>ruled(root)?[]:TOPS.filter(t=>!store.seen.has(t.nid)&&!ALL.some(d=>d.top===t&&reviewed(d)));
 function payload(){return{decisions:store.decisions,general:store.general,seen:[...store.seen],open:openIds(),cur:cur?cur.nid:null,ts:Date.now()};}
@@ -303,17 +306,21 @@ const hhmm=()=>new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"
 let editAt=null;   // "saved" (node composer) or "gsaved" (general note): where the status shows; none until the first edit
 function setSaved(t){["saved","gsaved"].forEach(i=>{const e=$(i),v=i===editAt?t:"";if(e&&e.textContent!==v)e.textContent=v;});}
 function announce(t){const a=$("announce");a.textContent="";setTimeout(()=>{a.textContent=t},30);}
-function queueSave(){if(sealed)return;lsSet(payload());setSaved("Saving…");clearTimeout(saveT);saveT=setTimeout(flushSave,400);}
-async function flushSave(){clearTimeout(saveT);if(sealed)return false;
-  try{const r=await post("/api/draft",payload());if(!r.ok)throw 0;setSaved("Draft saved · "+hhmm());return true;}
+// quiet: opening branches, selecting, filtering. They save the draft but don't flash "Saved" (nothing you wrote changed).
+let loud=false;
+function queueSave(quiet){if(sealed)return;lsSet(payload());if(!quiet){loud=true;setSaved("Saving…");}clearTimeout(saveT);saveT=setTimeout(flushSave,400);}
+async function flushSave(){clearTimeout(saveT);if(sealed)return false;const show=loud;loud=false;
+  try{const r=await post("/api/draft",payload());if(!r.ok)throw 0;if(show)setSaved("Draft saved · "+hhmm());return true;}
   catch(e){setSaved("Saved in this browser only (server unreachable)");return false;}}
 // Heartbeats double as a connection check: two misses in a row show a banner, the next success clears it.
-let hbFail=0,lost=false;
-function beat(){if(sealed)return;post("/api/heartbeat",{}).then(r=>{if(!r.ok)throw 0;hbFail=0;if(lost){lost=false;$("banner").hidden=true;toast("Reconnected to the review server");flushSave();}})
+let hbFail=0,lost=false,planChanged=false;
+function beat(){if(sealed)return;post("/api/heartbeat",{}).then(async r=>{if(!r.ok)throw 0;hbFail=0;if(lost){lost=false;$("banner").hidden=true;toast("Reconnected to the review server");flushSave();}
+    const j=await r.json().catch(()=>({}));if(j.rev&&CFG.rev&&j.rev!==CFG.rev&&!planChanged){planChanged=true;
+      banner("Claude updated this plan. Reload to see the new version; your decisions are kept for the nodes that are still there.",()=>{flushSave().finally(()=>location.reload())},"Reload");}})
   .catch(()=>{if(wasRestarted)return;if(++hbFail>=2&&!lost&&!sealed){lost=true;banner("Lost contact with the review server. Keep going: your work is saved in this browser and syncs when it is back.");}});}
 beat();const hbTimer=setInterval(beat,Math.max(1000,CFG.hb||20000));
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)beat();});
-function banner(text,retry){$("bannertext").textContent=text;$("retry").hidden=!retry;$("retry").onclick=retry||null;$("banner").hidden=false;}
+function banner(text,retry,label="Retry"){$("bannertext").textContent=text;$("retry").hidden=!retry;$("retry").textContent=label;$("retry").onclick=retry||null;$("banner").hidden=false;}
 $("bannerx").onclick=()=>{$("banner").hidden=true};
 let toastT=null;
 function toast(t,ms=3200){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{e.hidden=true},ms);}
@@ -437,7 +444,7 @@ function showTip(e,d){const k=decOf(d),en=entry(d);
 let OUT=false;
 const rowEl=d=>$("outline").querySelector(`.orow[data-id="${CSS.escape(d.nid)}"]`);
 let rendering=false;
-function renderOutline(){if(!OUT)return;const box=$("outline"),ae=document.activeElement,had=!!(ae&&ae.classList&&ae.classList.contains("orow"));
+function renderOutline(){if(!OUT)return;padOutline();const box=$("outline"),ae=document.activeElement,had=!!(ae&&ae.classList&&ae.classList.contains("orow"));
   const rows=visible().map(d=>{const k=decOf(d),e=entry(d),kd=kids(d);
     const r=el("div",{class:"orow d"+Math.min(d.depth,2),role:"treeitem","data-id":d.nid,tabindex:d===(cur||root)?0:-1,"aria-level":d.depth+1,
         "aria-selected":d===cur?"true":"false","aria-expanded":kd?String(!!d.children):null,"aria-label":ariaLabel(d),style:`padding-left:${8+d.depth*22}px;--bc:${d.pal[0]}`,
@@ -453,7 +460,10 @@ function renderOutline(){if(!OUT)return;const box=$("outline"),ae=document.activ
   // Focus goes to the selected row, never back to the row that had it (that would undo the selection).
   if(had){const n=rowEl(cur||root);if(n)n.focus({preventScroll:true});}rendering=false;}
 function focusNode(d){const e=OUT?rowEl(d):nodeEl(d);if(e)e.focus({preventScroll:true});}
-function setView(o,{save=true}={}){OUT=o;$("outline").hidden=!o;$("svg").style.visibility=o?"hidden":"";
+function padOutline(){const fd=document.querySelector(".find"),o=$("outline"),h=(fd?fd.offsetTop+fd.offsetHeight:0)+10;
+  o.style.paddingTop=h+"px";o.style.scrollPaddingTop=h+"px";}
+addEventListener("resize",()=>{if(OUT)padOutline();});
+function setView(o,{save=true}={}){OUT=o;if(o)padOutline();$("outline").hidden=!o;$("svg").style.visibility=o?"hidden":"";
   document.querySelector(".zoom").style.display=o?"none":"";$("legend").style.display=o?"none":"";tip.style.opacity=0;
   const b=$("view");b.setAttribute("aria-pressed",String(o));b.title=o?"Back to the map (O)":"Show the plan as an indented list with every note (O)";$("fit").disabled=o;
   if(save){try{localStorage.setItem("canopy:view",o?"outline":"map")}catch(e){}}
@@ -464,17 +474,17 @@ function setView(o,{save=true}={}){OUT=o;$("outline").hidden=!o;$("svg").style.v
 const T=()=>d3.zoomTransform(svg.node());
 function moveTo(t,anim=true){(anim&&!reduce?svg.transition().duration(DUR):svg).call(zoom.transform,t)}
 // Bounds come from the layout (target positions), not getBBox, so Fit is right even mid-animation.
-function bounds(){let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
-  visible().forEach(d=>{x0=Math.min(x0,d.y-6);x1=Math.max(x1,d.y+W(d)+CH(d)+(decOf(d)?44:6));
+function bounds(list){let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  (list||visible()).forEach(d=>{x0=Math.min(x0,d.y-6);x1=Math.max(x1,d.y+W(d)+CH(d)+(decOf(d)?44:6));
     y0=Math.min(y0,d.x-H(d)/2-6);y1=Math.max(y1,d.x+H(d)/2+6);});return{x:x0,y:y0,width:x1-x0,height:y1-y0};}
 // readable: never zoom out below MINK (13px labels stay about 10px); the map then starts at its left edge,
 // centred on the selected node, and you pan for the rest. F / Fit always shows the whole map.
 const MINK=0.77;
-function fit(anim=true,{readable=false}={}){if(OUT)return;const b=bounds(),w=stage.clientWidth,h=stage.clientHeight;if(!(b.width>0))return;
+function fit(anim=true,{readable=false,nodes=null}={}){if(OUT)return;const b=bounds(nodes),w=stage.clientWidth,h=stage.clientHeight;if(!(b.width>0))return;
   const M=24,lg=$("legend"),fd=document.querySelector(".find"),top=M+(fd?fd.offsetHeight+6:0),bot=M+(lg&&lg.style.display!=="none"?lg.offsetHeight+10:0),rt=M+44;   // clear of the search bar, legend and zoom buttons
   const aw=Math.max(80,w-M-rt),ah=Math.max(80,h-top-bot);
   const k=Math.min(1.15,Math.max(.05,Math.min(aw/b.width,ah/b.height)));
-  if(readable&&k<MINK){const a=cur&&visible().includes(cur)?cur:root;
+  if(readable&&k<MINK){const a=nodes&&nodes.length?(nodes.includes(cur)?cur:nodes[0]):cur&&visible().includes(cur)?cur:root;
     let tx=M-b.x*MINK;const ar=(a.y+W(a)+CH(a)+40)*MINK;if(tx+ar>w-rt)tx=(w-rt)-ar;
     return moveTo(d3.zoomIdentity.translate(tx,top+ah/2-a.x*MINK).scale(MINK),anim);}
   moveTo(d3.zoomIdentity.translate(M+(aw-b.width*k)/2-b.x*k,top+(ah-b.height*k)/2-b.y*k).scale(k),anim)}
@@ -504,7 +514,7 @@ function toggle(d,{user=true}={}){
   const t=T(),sx=t.applyX(d.y),sy=t.applyY(d.x),opening=!d.children;
   if(d.children){d._children=d.children;d.children=null}else{d.children=d._children;d._children=null}
   if(opening&&user)markSeen(d.depth===1?d:d.top);
-  if(user)queueSave();
+  if(user)queueSave(true);
   update(d);
   let nt=d3.zoomIdentity.translate(sx-d.y*t.k,sy-d.x*t.k).scale(t.k); // keep the clicked node under the cursor
   if(opening)nt=showChildren(nt,d);
@@ -522,13 +532,22 @@ function select(d,{focus=true}={}){
 }
 // Open the path to d and select it at once (not after the animation), so a key pressed right away acts on d.
 function goTo(d,{focus=true}={}){reveal(d);select(d,{focus});pulse(d);}
-function setDecision(d,k){if(sealed)return;if(!d){toast("Select a node first: click its label, or use the arrow keys");return}editAt="saved";const e=store.decisions[d.nid]||{d:"",t:""};e.d=e.d===k?"":k;
+// K X C A all leave focus on the map (typing never lands in a note by surprise); Enter writes a note, U undoes.
+const undoStack=[];
+function setDecision(d,k){if(sealed)return;if(!d){toast("Select a node first: click its label, or use the arrow keys");return}editAt="saved";
+  const was=store.decisions[d.nid]?{...store.decisions[d.nid]}:null;undoStack.push({id:d.nid,was});if(undoStack.length>200)undoStack.shift();
+  const e=store.decisions[d.nid]||{d:"",t:""};const prev=e.d;e.d=e.d===k?"":k;
   if(e.d||e.t.trim())store.decisions[d.nid]=e;else delete store.decisions[d.nid];
-  markSeen(d.top);queueSave();paint();renderPanel();counts();autoHideLegend();
-  if(e.d==="change"||e.d==="ask"){$("ctext").focus();}
+  tip.style.opacity=0;markSeen(d.top);queueSave();paint();renderPanel();counts();autoHideLegend();
+  const nm=d.data.name.length>40?d.data.name.slice(0,39)+"…":d.data.name;
+  toast(e.d?`${DEC[e.d].label}: ${nm} · Enter to ${e.d==="change"?"say what should change":e.d==="ask"?"write your question":"add a note"} · U to undo`:`Removed ${DEC[prev].label} from ${nm} · U to undo`,4200);
 }
-function nextUnreviewed(){const start=cur?cur.ord:-1;const n=ALL.length;
-  for(let i=1;i<=n;i++){const d=ALL[(start+i)%n];if(!kids(d)&&!covered(d)){goTo(d);return}}
+function undo(){const u=undoStack.pop();if(!u){toast("Nothing to undo");return}const d=byId.get(u.id);
+  if(u.was)store.decisions[u.id]=u.was;else delete store.decisions[u.id];
+  tip.style.opacity=0;queueSave();if(d){reveal(d);cur=d;}paint();renderPanel();counts();if(d){focusNode(d);ensureVisible(d);}
+  toast("Undone"+(d?": "+d.data.name:""));}
+function nextUnreviewed(dir=1){const start=cur?cur.ord:(dir>0?-1:ALL.length);const n=ALL.length;
+  for(let i=1;i<=n;i++){const d=ALL[((start+dir*i)%n+n)%n];if(!kids(d)&&!covered(d)){goTo(d);return}}
   toast("Every item is covered by a decision ✓");announce("Every item is covered by a decision");}
 // Enter / Shift+Enter in the search box step through matches; focus stays in the box.
 function nextMatch(dir=1){computeMatches();if(!MLIST.length){toast(filtering()?"No matches":"Type something to search");return}
@@ -539,8 +558,9 @@ function nextMatch(dir=1){computeMatches();if(!MLIST.length){toast(filtering()?"
   goTo(MLIST[j],{focus:false});computeMatches();}
 function applyFilter(){computeMatches();
   if(filtering()&&MATCH.size){let ch=false;MATCH.forEach(d=>{for(let a=d.parent;a;a=a.parent)if(a._children){a.children=a._children;a._children=null;ch=true}});
-    if(ch){update(root);queueSave();}else paint();
-    if(!OUT&&(ch||T().k<MINK*0.95))fit(true,{readable:true});return}
+    if(ch){update(root);queueSave(true);}else paint();
+    // Show the matches: all of them when they fit at reading size, else starting from the first.
+    if(!OUT)fit(true,{readable:true,nodes:MLIST});return}
   paint();}
 
 // ---------- side panel
@@ -558,7 +578,9 @@ function renderPanel(){
   $("target").replaceChildren(...(d?["Decision for ",el("b",{},d.data.name)]:["Select a node to decide on it"]));
   const e=d?entry(d):null,k=e?e.d:"";
   document.querySelectorAll("#chips .chip").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.k===k));b.disabled=!d;});
-  const ta=$("ctext");ta.disabled=!d;ta.value=e?e.t:"";ta.placeholder=d?PH[k]:"Select a node first";
+  let ta=$("ctext");
+  if(noteFor!==d){const n=ta.cloneNode(false),had=document.activeElement===ta;ta.replaceWith(n);bindNote(n);ta=n;noteFor=d;if(had)n.focus();}
+  ta.disabled=!d;ta.value=e?e.t:"";ta.placeholder=d?PH[k]:"Select a node first";
   $("save").disabled=!d;
   renderList();
 }
@@ -581,13 +603,16 @@ function refreshGate(){if(!CFG.gate)return;const m=missingTops();$("approve").se
     gh.title="Approve unlocks once every top-level branch has been opened or selected, or has a decision. Click to open the next one. Remaining: "+names.join(", ");}
   $("approve").title=m.length?`Look at every top-level branch first (open or select it, or decide on something in it). Remaining: ${m.map(t=>t.data.name).join(", ")}`:"Approve the plan";
   let s=$("progress").textContent.replace(/ · Branches .*$/,"");$("progress").textContent=s+` · Branches ${TOPS.length-m.length}/${TOPS.length}`;}
-$("ctext").addEventListener("input",e=>{if(!cur)return;editAt="saved";const en=store.decisions[cur.nid]||{d:"",t:""};en.t=e.target.value.slice(0,20000);
+let noteFor;
+function bindNote(ta){
+ta.addEventListener("input",e=>{if(!cur)return;editAt="saved";const en=store.decisions[cur.nid]||{d:"",t:""};en.t=e.target.value.slice(0,20000);
   if(en.d||en.t.trim())store.decisions[cur.nid]=en;else delete store.decisions[cur.nid];queueSave();paint();counts();});
 // Notes save as you type; Done confirms it and goes back to the map.
 async function commit(){editAt="saved";$("ctext").blur();if(cur){focusNode(cur);pulse(cur);}const ok=await flushSave();
   if(ok){setSaved("Saved ✓ "+hhmm());announce("Saved");}else announce("Saved in this browser only");}
 $("save").onclick=commit;
-$("ctext").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();commit()}});
+ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();commit()}});}
+bindNote($("ctext"));
 $("general").value=store.general;$("general").addEventListener("input",e=>{editAt="gsaved";store.general=e.target.value.slice(0,20000);queueSave();});
 $("general").addEventListener("blur",()=>{flushSave();});
 
@@ -660,7 +685,18 @@ function showDone(kind){const D=DONE[kind];$("donemsg").textContent=D.t;$("dones
   $("donecounts").replaceChildren(...(kind==="close"?[]:ORDER.map(k=>[k,items.filter(d=>decOf(d)===k).length]).filter(x=>x[1]).map(([k,n])=>
     el("span",{class:"cnt"},el("span",{class:"L "+DEC[k].cls},DEC[k].L),`${DEC[k].label} ${n}`))));
   $("donebox").hidden=false;$("gatehint").hidden=true;$("toast").hidden=true;
-  document.querySelector(".app").inert=true;document.querySelectorAll(".modal").forEach(m=>m.inert=true);$("donemsg").focus();announce(D.t+". "+D.s);}
+  document.querySelector(".app").inert=true;document.querySelectorAll(".modal").forEach(m=>m.inert=true);$("donemsg").focus();announce(D.t+". "+D.s);
+  watchNextRound();}
+// Every round of the same plan file is served at the same address. When a different server process answers
+// there, Claude has opened the next round: offer it (the plan may be revised).
+function watchNextRound(){let tries=0;const url=location.pathname.replace(/\/?$/,"/")+"round";
+  const tick=async()=>{if(++tries>2400)return;let j=null;
+    try{const r=await fetch(url,{cache:"no-store"});if(r.ok)j=await r.json();}catch(e){}
+    const rev=j&&j.rev;
+    if(j&&j.inst&&j.inst!==CFG.inst){$("nextround").hidden=false;$("nextmsg").textContent=rev&&rev!==CFG.rev?"Claude opened a revised version of this plan for another round.":"Claude opened this plan for another round.";
+      $("dhint").hidden=true;announce($("nextmsg").textContent);return;}
+    setTimeout(tick,3000);};
+  setTimeout(tick,1500);}
 async function send(url,body,msg){
   const btns=["submit","approve","reqchg","close"].map($);btns.forEach(b=>b.disabled=true);clearTimeout(qT);
   if(msg!=="close")toast("Sending to Claude…",8000);
@@ -676,11 +712,14 @@ async function send(url,body,msg){
     banner(m+" Your work is saved in this browser.",()=>{$("banner").hidden=true;send(url,body,msg)});}
 }
 
+$("opennext").onclick=()=>location.reload();
+
 // ---------- keyboard
 document.addEventListener("keydown",e=>{
   if(modalOpen()||sealed)return;
   const tg=e.target,tag=tg.tagName;
   if(tag==="TEXTAREA"||tag==="INPUT"||tag==="SELECT"){if(e.key==="Escape"){tg.blur();if(cur)focusNode(cur)}return;}
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==="z"||e.key==="Z")&&!e.shiftKey){e.preventDefault();undo();return}
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(tg.closest&&tg.closest("button,summary,a,select")&&(e.key==="Enter"||e.key===" "))return;
   // While a search or filter is on, arrows move only through what is shown.
@@ -698,7 +737,9 @@ document.addEventListener("keydown",e=>{
     case"x":case"X":setDecision(cur,"cut");break;
     case"c":case"C":setDecision(cur,"change");break;
     case"a":case"A":setDecision(cur,"ask");break;
-    case"n":case"N":nextUnreviewed();break;
+    case"n":nextUnreviewed(1);break;
+    case"N":nextUnreviewed(e.shiftKey?-1:1);break;
+    case"u":case"U":undo();break;
     case"f":case"F":if(OUT)toast("Fit works on the map. Press O to go back to it.");else fit();break;
     case"o":case"O":setView(!OUT);break;
     case"/":$("q").focus();$("q").select();break;
@@ -707,14 +748,14 @@ document.addEventListener("keydown",e=>{
     default:h=false;}
   if(h)e.preventDefault();
 });
-$("next").onclick=nextUnreviewed;
+$("next").onclick=()=>nextUnreviewed(1);
 $("gatehint").onclick=()=>{const t=missingTops()[0];if(!t)return;if(t._children)toggle(t);else markSeen(t);select(t);};
 function zoomBy(f){if(OUT){toast("Zoom works on the map. Press O to go back to it.");return}(reduce?svg:svg.transition().duration(200)).call(zoom.scaleBy,f);}
 // Expand all opens every branch, so in a gate review each top-level branch counts as looked at.
-$("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});TOPS.forEach(t=>store.seen.add(t.nid));update(root);queueSave();counts();
+$("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});TOPS.forEach(t=>store.seen.add(t.nid));update(root);queueSave(true);counts();
   fit(true,{readable:true});let hinted=null;try{hinted=sessionStorage.getItem("canopy:exphint")}catch(e){}
   if(!OUT&&visible().length>40&&!hinted){toast("Showing everything at reading size: drag to pan, F for the whole map, O for a list",5000);try{sessionStorage.setItem("canopy:exphint","1")}catch(e){}}};
-$("collapse").onclick=()=>{ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null}});if(cur&&cur.depth>1)cur=cur.top;update(root);paint();renderPanel();queueSave();fit(true,{readable:true})};
+$("collapse").onclick=()=>{ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null}});if(cur&&cur.depth>1)cur=cur.top;update(root);paint();renderPanel();queueSave(true);fit(true,{readable:true})};
 $("fit").onclick=()=>fit();
 $("view").onclick=()=>setView(!OUT);
 let qT=null;
@@ -731,7 +772,8 @@ $("zout").onclick=()=>zoomBy(0.8);
 
 const LGK="canopy:legend";
 (function(){const lg=$("legend");let v=null;try{v=localStorage.getItem(LGK)}catch(e){}
-  const want=v?v==="open":stage.clientHeight>=420;if(want!==lg.open){lg.dataset.auto="1";lg.open=want;}
+  let first=true;try{first=!localStorage.getItem("canopy:visited");localStorage.setItem("canopy:visited","1")}catch(e){}
+  const want=v?v==="open":first&&stage.clientHeight>=420;if(want!==lg.open){lg.dataset.auto="1";lg.open=want;}
   lg.addEventListener("toggle",()=>{if(lg.dataset.auto){delete lg.dataset.auto;return}try{localStorage.setItem(LGK,lg.open?"open":"closed")}catch(e){}});})();
 function autoHideLegend(){const lg=$("legend");let v=null;try{v=localStorage.getItem(LGK)}catch(e){}if(lg.open&&!v){lg.dataset.auto="1";lg.open=false;}}
 update(root);fit(false,{readable:true});renderPanel();counts();

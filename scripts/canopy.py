@@ -40,7 +40,7 @@ DISPLAY_NAME = "Canopy"
 ENV_PREFIX = "CANOPY_"            # CANOPY_PORT, CANOPY_BROWSER, CANOPY_DATA_DIR
 FALLBACK_DATA_DIR = Path.home() / ("." + TOOL_NAME)
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 MAX_BODY = 1024 * 1024
 MAX_TEXT = 20000
 MAX_OPEN = 5000
@@ -165,6 +165,9 @@ def normalise(doc):
             out["done"] = True
         if n.get("todo") or status == "todo":
             out["todo"] = True
+        pr = str(n.get("priority") or "").strip().upper()
+        if pr:
+            out["priority"] = ("P" + pr if pr in ("1", "2", "3") else pr)[:8]
         explicit = n.get("id")
         if explicit is not None and str(explicit).strip():
             nid = str(explicit).strip()
@@ -438,7 +441,9 @@ def round_diff(doc, last):
         "changed": changed,
         "moved": moved,
         "removed": [{"id": i, "name": text(before[i])[0] if text(before[i]) else str(i), "said": said.get(i),
-                     "reason": reasons.get(i, "")} for i in removed][:500],
+                     "reason": reasons.get(i, ""),
+                     "parent": before[i][2] if isinstance(before[i], list) and len(before[i]) >= 3 else None}
+                    for i in removed][:500],
         "said": {i: v for i, v in said.items() if i in now},
         "carried": carried,
     }

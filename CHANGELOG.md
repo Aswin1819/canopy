@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.0 (2026-11-19)
+Phase 2b: the review layout. The four P1 items approved in the phase-2 review.
+
+### Map and outline together
+- Wide screens open with the map and the outline side by side (Map / Split / List in the header, `O` cycles). Selecting in either one selects in both, and the outline scrolls to the node. Fit, panning and the controls stay within the map's half. On a narrow window split falls back to the map and comes back when there is room. Your last choice is remembered.
+
+### Round changes on the map
+- Nodes added, changed or moved since the last round carry a small chip on the map ("new", "changed", "moved"), the same words as the outline. A parent shows "2 removed" when some of its children were dropped. The removed list in the panel still says why.
+
+### Controls and help
+- The legend box is gone. Zoom, Fit, walk mode and `?` sit in one control group at the bottom right, so nothing covers the map or the zoom buttons. `?` (button or key) opens a sheet with every key, the colours and marks, and how coverage and the gate count.
+- A first visit shows one short tip instead.
+- The walk-mode button shows whether walk mode is on.
+
+### Hover card
+- Hovering a node shows where it sits, its priority (a `priority` field, or a leading "P1." in the note), the first line of its note, your decision or the branch decision covering it, and its round state.
+- The server passes an optional `priority` field through.
+
 ## 1.3.0 (2026-11-19)
 Phase 2a: quick review fixes, planned and approved in Canopy itself over four review rounds.
 

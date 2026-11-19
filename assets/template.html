@@ -147,7 +147,6 @@ svg{width:100%;height:100%;display:block;cursor:grab} svg:active{cursor:grabbing
 .btn.tg[aria-pressed="true"]{background:var(--pressed);border-color:var(--ink);font-weight:600}
 .btn.primary kbd{background:transparent;color:var(--on-ink);border-color:color-mix(in srgb,var(--on-ink) 55%,transparent);margin-left:4px}
 .btn.ex{color:var(--ink);padding-left:8px;padding-right:8px}
-.chg circle{fill:var(--focus);stroke:var(--raised);stroke-width:2}
 .roundchip{font-size:var(--fs-sm);color:var(--info-ink);background:var(--info-bg);border:1px solid var(--info-line);border-radius:var(--r-pill);padding:6px 12px;cursor:pointer;white-space:nowrap}
 .roundchip[hidden]{display:none}
 .diff{font-size:var(--fs-sm);background:var(--info-bg);border:1px solid var(--info-line);border-radius:var(--r-sm);padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:4px}
@@ -218,13 +217,33 @@ textarea[disabled]{background:var(--hover);border-color:var(--line)}
 .di .tx{color:var(--muted);display:block;white-space:pre-wrap;margin-top:2px}
 .empty{font-size:14px;color:var(--muted)}
 .tip{position:absolute;max-width:300px;background:var(--raised);color:var(--ink);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-sm);box-shadow:var(--shadow-2);pointer-events:none;opacity:0;transition:opacity .12s;white-space:pre-wrap}
-.legend{position:absolute;left:10px;bottom:10px;background:var(--overlay);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:6px 10px;font-size:12px;color:var(--ink);max-width:calc(100% - 20px)}
-.legend summary{cursor:pointer;font-weight:600}
-.legend .lg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;align-items:center}
-.legend .L{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:var(--r-xs);color:var(--on-decision);font-size:11px;font-weight:700;margin-right:3px}
+/* One control island bottom right of the map: zoom, fit, walk mode, help. */
+.island{position:absolute;right:10px;bottom:10px;display:flex;gap:4px;align-items:center;background:var(--overlay);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px;box-shadow:var(--shadow-1);z-index:3}
+.island .btn{padding:4px 10px;min-width:30px;border-color:transparent;background:transparent}
+.island .btn:hover{background:var(--hover)}
+.island .btn[aria-pressed="true"]{background:var(--pressed);border-color:var(--ink);font-weight:600}
+.island .sep{width:1px;align-self:stretch;background:var(--line);margin:2px 2px}
 .sw{display:inline-block;width:22px;height:12px;border-radius:var(--r-pill);border:1.5px solid var(--muted);vertical-align:-1px;margin-right:3px;background:var(--raised)}
-.zoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:4px}
-.zoom .btn{width:34px;padding:4px 0}
+/* Help sheet (? key) */
+.help .body{gap:14px}
+.help h3{margin:0 0 6px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:var(--fs-sm);align-items:baseline}
+.keys kbd{white-space:nowrap}
+.lgd{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:var(--fs-sm);align-items:center}
+.lgd .L{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:var(--r-xs);color:var(--on-decision);font-size:11px;font-weight:700;margin-right:4px;padding:0 3px}
+/* Views: map, split (map + outline), list */
+.vseg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden}
+.vseg .btn{border:0;border-radius:0;padding:6px 10px}
+.vseg .btn+.btn{border-left:1px solid var(--line)}
+.vseg .btn[aria-pressed="true"]{background:var(--pressed);font-weight:600}
+.stage.split .outline{left:auto;width:min(44%,620px);border-left:1px solid var(--line);padding-top:12px;box-shadow:var(--shadow-1)}
+.stage.split .find{max-width:calc(100% - min(44%,620px) - 20px)}
+.stage.split .island{right:calc(min(44%,620px) + 10px)}
+.stage.split .toast{left:calc((100% - min(44%,620px)) / 2)}
+/* Round chips on map nodes */
+.mchip rect{stroke-width:1} .mchip text{font:600 10.5px var(--f);pointer-events:none}
+.tip .pri{display:inline-block;font:700 11px var(--f);border-radius:var(--r-pill);padding:0 6px;margin-right:6px;background:var(--pressed);color:var(--ink)}
+.tip .meta{display:block;margin-top:2px;color:var(--muted);font-size:var(--fs-xs)}
 .modal{position:fixed;inset:0;background:var(--scrim);display:grid;place-items:center;z-index:20;padding:16px}
 .modal[hidden]{display:none}
 .dlg{background:var(--raised);color:var(--ink);border:1px solid var(--line);border-radius:var(--r-md);max-width:640px;width:100%;max-height:86vh;display:grid;grid-template-rows:auto 1fr auto;box-shadow:var(--shadow-3)}
@@ -270,8 +289,7 @@ textarea[disabled]{background:var(--hover);border-color:var(--line)}
       <div class="grp">
         <button class="btn" id="expand" type="button">Expand all</button>
         <button class="btn" id="collapse" type="button">Collapse all</button>
-        <button class="btn" id="fit" type="button" title="Show the whole map (F)">Fit</button>
-        <button class="btn tg" id="view" type="button" aria-pressed="false" title="Show the plan as an indented list with every note (O)">Outline</button>
+        <span class="vseg" role="group" aria-label="View"><button class="btn" id="vmap" type="button" aria-pressed="false" title="Map only (O cycles)">Map</button><button class="btn" id="vsplit" type="button" aria-pressed="false" title="Map and outline side by side (O cycles)">Split</button><button class="btn" id="view" type="button" aria-pressed="false" title="Outline only, every note readable (O cycles)">List</button></span>
         <button class="btn ic" id="theme" type="button" title="Colour theme: follows the system (T)" aria-label="Colour theme: system">◐</button>
       </div></div>
       <button class="roundchip" id="roundchip" type="button" hidden title="Show only what changed since the last round"></button>
@@ -297,14 +315,11 @@ textarea[disabled]{background:var(--hover);border-color:var(--line)}
       </div>
       <div class="tip" id="tip"></div>
       <div class="toast" id="toast" role="status" hidden></div>
-      <details class="legend" id="legend"><summary>Legend &amp; keys</summary>
-        <div class="lg"><span><span class="L Lk">K</span>Keep</span><span><span class="L Lx">X</span>Cut</span><span><span class="L Lc">C</span>Change</span><span><span class="L La">A</span>Ask</span><span><span class="L Ln">✎</span>Note</span></div>
-        <div class="lg"><span>✓ done</span><span><span class="sw" style="border-style:dashed"></span>○ to do</span><span><span class="L" style="background:var(--human);border-radius:50%">H</span>human step</span><span>struck = cut</span></div>
-        <div class="lg"><span><span class="L Lo" style="color:var(--keep);border-color:var(--keep)">K</span>covered by a branch decision</span></div>
-        <div class="lg path">Click a label to select · click + to open · ←↑↓→ move · Space open · Enter write · Ctrl+Enter done · U undo · N / Shift+N next / previous · 1–4 levels · W walk mode · F whole map · O outline · T theme · / search</div>
-        <div class="lg path">Items are the end points of the tree. A decision on a branch counts for everything under it that has no decision of its own.</div>
-      </details>
-      <div class="zoom"><button class="btn" id="zin" type="button" aria-label="Zoom in">+</button><button class="btn" id="zout" type="button" aria-label="Zoom out">−</button></div>
+      <div class="island" role="toolbar" aria-label="Map controls">
+        <button class="btn" id="zout" type="button" aria-label="Zoom out" title="Zoom out (−)">−</button><button class="btn" id="zin" type="button" aria-label="Zoom in" title="Zoom in (+)">+</button><button class="btn" id="fit" type="button" title="Show the whole map (F)">Fit</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="btn" id="walk" type="button" aria-pressed="true" title="Walk mode: Keep or Cut moves to the next item (W)">Walk</button><button class="btn" id="helpbtn" type="button" aria-label="Keys and colours" title="Keys and colours (?)">?</button>
+      </div>
     </div>
     <aside class="side" aria-label="Selected node">
       <section class="nodebox" id="nodebox"></section>
@@ -325,6 +340,31 @@ textarea[disabled]{background:var(--hover);border-color:var(--line)}
     </aside>
   </div>
 </div>
+<div class="modal help" id="help" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="hlh">
+  <header><h2 id="hlh">Keys and colours</h2></header>
+  <div class="body">
+    <section><h3 class="h3">Decide</h3><div class="keys">
+      <span><kbd>K</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>A</kbd></span><span>Keep, Cut, Change, Ask on the selected node (again to clear). With walk mode on, Keep and Cut move to the next item.</span>
+      <span><kbd>Enter</kbd></span><span>Write a note; <kbd>Ctrl+Enter</kbd> done, <kbd>Esc</kbd> back to the map</span>
+      <span><kbd>U</kbd> / <kbd>Ctrl+Z</kbd></span><span>Undo the last decision</span></div></section>
+    <section><h3 class="h3">Move</h3><div class="keys">
+      <span><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></span><span>Move; → opens a branch, ← closes it or goes to the parent; <kbd>Space</kbd> opens</span>
+      <span><kbd>N</kbd> / <kbd>Shift+N</kbd></span><span>Next / previous item not covered yet</span>
+      <span><kbd>1</kbd>–<kbd>4</kbd></span><span>Show that many levels</span>
+      <span><kbd>/</kbd></span><span>Search (Enter steps through matches)</span></div></section>
+    <section><h3 class="h3">View</h3><div class="keys">
+      <span><kbd>O</kbd></span><span>Cycle map, split, list</span>
+      <span><kbd>F</kbd> · <kbd>+</kbd> <kbd>−</kbd></span><span>Whole map · zoom</span>
+      <span><kbd>W</kbd> · <kbd>T</kbd> · <kbd>?</kbd></span><span>Walk mode · theme · this sheet</span></div></section>
+    <section><h3 class="h3">Colours and marks</h3><div class="lgd">
+      <span><span class="L Lk">K</span>Keep</span><span><span class="L Lx">X</span>Cut</span><span><span class="L Lc">C</span>Change</span><span><span class="L La">A</span>Ask</span><span><span class="L Ln">✎</span>Note</span>
+      <span><span class="L Lo" style="color:var(--keep);border-color:var(--keep)">K</span>covered by a branch decision</span>
+      <span><span class="L" style="background:var(--human);border-radius:50%">H</span>human step</span><span>✓ done</span><span><span class="sw" style="border-style:dashed"></span>○ to do</span><span>struck = cut</span>
+      <span><span class="otag">new</span> <span class="otag">changed</span> <span class="otag">moved</span> since last round</span></div></section>
+    <section><h3 class="h3">How it counts</h3><p class="note" id="helpcount">Items are the nodes with no children. A decision on a branch counts for everything under it that has no decision of its own.</p></section>
+  </div>
+  <footer><button class="btn" id="helpx" type="button">Close</button></footer>
+</div></div>
 <div class="modal" id="confirm" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cfh">
   <header><h2 id="cfh">Close without sending?</h2></header>
   <div class="body"><p id="cftext"></p></div>
@@ -408,6 +448,12 @@ const RCAR=RD&&RD.carried||{},RMOV=RD&&RD.moved||{};
 // A fresh round (no draft yet) starts with last round's decisions on every unchanged node, so only new and
 // changed nodes need a look. A draft, once you start, is yours and wins.
 if(RD&&!restoredDraft)for(const[id,v]of Object.entries(RCAR)){if(byId.has(id)&&!store.decisions[id]){const d=DECS.includes(v.d)?v.d:"",t=String(v.t||"");if(d||t)store.decisions[id]={d,t};}}
+// Removed children per old parent, shown on the parent as "2 removed".
+const RREM={};(RD&&RD.removed||[]).forEach(r=>{if(r.parent&&byId.has(r.parent))(RREM[r.parent]=RREM[r.parent]||[]).push(r);});
+const chipText=d=>{const p=[];const df=diffOf(d);if(df)p.push(df);else if(RMOV[d.nid])p.push("moved");const rm=RREM[d.nid];if(rm)p.push(rm.length+" removed");return p.join(" · ");};
+const chipX=d=>{let x=W(d)+CH(d)+8;const e=entry(d);if(decOf(d))x+=(e&&e.d&&e.t.trim()?30:18)+6;else if(!kids(d)&&coverOf(d))x+=24;return x;};
+const prio=d=>{const p=d.data.priority;if(p)return String(p);const m=(d.data.note||"").match(/^\s*(P[123])\b/i);return m?m[1].toUpperCase():"";};
+const firstLine=t=>{t=String(t||"").replace(/^\s*P[123]\b[^.:]*[.:]\s*/i,"").trim();const m=t.match(/^(.{1,160}?[.!?])(\s|$)/);const s=(m?m[1]:t.split("\n")[0]);return s.length>160?s.slice(0,159)+"…":s;};
 const nameOf=id=>byId.has(id)?byId.get(id).data.name:((RD&&RD.removed||[]).find(r=>r.id===id)||{name:id}).name;
 const GATE_RULE="Approve unlocks once every top-level branch has a decision (on the branch or anything in it)";
 // Opening a branch, Expand all or a note alone do not count; Keep / Cut / Change / Ask do.
@@ -527,7 +573,7 @@ function update(src){
   en.append("text").attr("class",d=>"lbl l"+Math.min(d.depth,2));
   const cv=en.filter(kids).append("g").attr("class","chev").on("click",(e,d)=>{e.stopPropagation();toggle(d)});
   cv.append("circle").attr("r",9);cv.append("text").attr("text-anchor","middle").attr("dy","0.36em");
-  en.append("g").attr("class","chg").append("circle").attr("r",5);
+  const mc=en.append("g").attr("class","mchip");mc.append("rect").attr("rx",7).attr("height",14).attr("y",-7);mc.append("text").attr("dy","0.35em").attr("x",6);
   const ih=en.append("g").attr("class","inh");ih.append("rect").attr("rx",4).attr("height",18).attr("width",18).attr("y",-9);ih.append("text").attr("dy","0.36em").attr("x",5);
   const bg=en.append("g").attr("class","badge");bg.append("rect").attr("rx",4).attr("height",18).attr("y",-9);bg.append("text").attr("dy","0.36em");
   const all=en.merge(n);all.order();
@@ -562,25 +608,35 @@ function paint(sel){
   sel.select("g.chev text").style("fill",d=>d.depth===0?"var(--ink)":d.pal[0]).text(d=>d.children?"−":"+");
   sel.select("g.badge").style("display",d=>decOf(d)?null:"none").attr("transform",d=>`translate(${W(d)+CH(d)+8},0)`);
   sel.select("g.badge rect").attr("width",d=>{const e=entry(d);return e&&e.d&&e.t.trim()?30:18}).style("fill",d=>{const k=decOf(d);return k?DEC[k].col:"none"});
-  sel.select("g.chg").style("display",d=>diffOf(d)?null:"none").attr("transform",d=>`translate(${RX(d)/2},${-H(d)/2+1})`);
+  sel.select("g.mchip").style("display",d=>chipText(d)?null:"none").attr("transform",d=>`translate(${chipX(d)},0)`);
+  sel.select("g.mchip rect").attr("width",d=>chipText(d).length*6+12).style("fill","var(--info-bg)").style("stroke","var(--info-line)");
+  sel.select("g.mchip text").text(chipText).style("fill","var(--info-ink)");
   sel.select("g.inh").style("display",d=>!kids(d)&&!reviewed(d)&&coverOf(d)?null:"none").attr("transform",d=>`translate(${W(d)+CH(d)+8},0)`)
     .each(function(d){const c=coverOf(d);if(!c)return;const k=decOf(c);d3.select(this).select("rect").style("stroke",DEC[k].col);d3.select(this).select("text").style("fill",DEC[k].col).text(DEC[k].L);});
   sel.select("g.badge text").attr("x",4).text(d=>{const e=entry(d),k=decOf(d);if(!k)return"";return DEC[k].L+(e.d&&e.t.trim()?" ✎":"")});
   renderOutline();
 }
 // Hover shows the whole node: where it sits, its note and your decision.
-function showTip(e,d){const k=decOf(d),en=entry(d);
-  tip.replaceChildren(...[d.depth>1?el("span",{class:"tp"},d.path.slice(1,-1).join(" › ")):null,el("b",{},d.data.name),
-    d.data.note?el("span",{class:"td"},d.data.note):null,
-    k?el("span",{class:"td"},el("b",{},DEC[k].label),en.t.trim()?": "+en.t.trim():""):null].filter(Boolean));
+// Hover card: where the node sits, its priority, the first line of its note, your decision and the round.
+function showTip(e,d){const k=decOf(d),en=entry(d),pr=prio(d),fl=firstLine(d.data.note),ch=chipText(d),cv=!k&&coverOf(d);
+  const meta=[d.data.h?"human step":"",d.data.done?"done":"",d.data.todo?"to do":"",ch].filter(Boolean).join(" · ");
+  tip.replaceChildren(...[d.depth>1?el("span",{class:"tp"},d.path.slice(1,-1).join(" › ")):null,
+    el("span",{},pr?el("span",{class:"pri"},pr):null,el("b",{},d.data.name)),
+    fl?el("span",{class:"td"},fl):null,
+    k?el("span",{class:"td"},el("b",{},DEC[k].label),en.t.trim()?": "+(en.t.trim().length>120?en.t.trim().slice(0,119)+"…":en.t.trim()):""):
+      cv?el("span",{class:"td"},`Covered by ${DEC[decOf(cv)].label} on ${cv.data.name}`):null,
+    meta?el("span",{class:"meta"},meta):null].filter(Boolean));
   const r=stage.getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top+14;if(x+310>r.width)x=r.width-310;if(y+120>r.height)y-=130;
   tip.style.left=Math.max(8,x)+"px";tip.style.top=Math.max(8,y)+"px";tip.style.opacity=1}
 
 // ---------- outline view: the same tree as an indented list, sharing open state, selection and decisions
-let OUT=false;
+// Views: "map", "split" (map with the outline beside it) or "outline". OUT = only the outline is shown.
+let VIEW="map",OUT=false;
+const LIST=()=>VIEW!=="map",MAP=()=>VIEW!=="outline";
+const mapW=()=>stage.clientWidth-(VIEW==="split"?$("outline").offsetWidth:0);
 const rowEl=d=>$("outline").querySelector(`.orow[data-id="${CSS.escape(d.nid)}"]`);
 let rendering=false;
-function renderOutline(){if(!OUT)return;padOutline();const box=$("outline"),ae=document.activeElement,had=!!(ae&&ae.classList&&ae.classList.contains("orow"));
+function renderOutline(){if(!LIST())return;padOutline();const box=$("outline"),ae=document.activeElement,had=!!(ae&&ae.classList&&ae.classList.contains("orow"));
   const rows=visible().map(d=>{const k=decOf(d),e=entry(d),kd=kids(d);
     const r=el("div",{class:"orow d"+Math.min(d.depth,2),role:"treeitem","data-id":d.nid,tabindex:d===(cur||root)?0:-1,"aria-level":d.depth+1,
         "aria-selected":d===cur?"true":"false","aria-expanded":kd?String(!!d.children):null,"aria-label":ariaLabel(d),style:`padding-left:${8+d.depth*22}px;--bc:${d.pal[0]}`,
@@ -596,16 +652,25 @@ function renderOutline(){if(!OUT)return;padOutline();const box=$("outline"),ae=d
   // Focus goes to the selected row, never back to the row that had it (that would undo the selection).
   if(had){const n=rowEl(cur||root);if(n)n.focus({preventScroll:true});}rendering=false;}
 // Never pull focus out of an open dialog (a delayed walk-mode step could otherwise land behind it).
-function focusNode(d){if(typeof modalOpen==="function"&&modalOpen())return;const e=OUT?rowEl(d):nodeEl(d);if(e)e.focus({preventScroll:true});}
-function padOutline(){const fd=document.querySelector(".find"),o=$("outline"),h=(fd?fd.offsetTop+fd.offsetHeight:0)+10;
+function focusNode(d){if(typeof modalOpen==="function"&&modalOpen())return;
+  const ae=document.activeElement,inList=!!(ae&&ae.closest&&ae.closest("#outline"));
+  const e=VIEW==="outline"||(VIEW==="split"&&inList)?rowEl(d):nodeEl(d);if(e)e.focus({preventScroll:true});}
+function padOutline(){const fd=document.querySelector(".find"),o=$("outline"),h=VIEW==="split"?12:(fd?fd.offsetTop+fd.offsetHeight:0)+10;
   o.style.paddingTop=h+"px";o.style.scrollPaddingTop=h+"px";}
-addEventListener("resize",()=>{if(OUT)padOutline();});
-function setView(o,{save=true}={}){OUT=o;if(o)padOutline();$("outline").hidden=!o;$("svg").style.visibility=o?"hidden":"";
-  document.querySelector(".zoom").style.display=o?"none":"";$("legend").style.display=o?"none":"";tip.style.opacity=0;
-  const b=$("view");b.setAttribute("aria-pressed",String(o));b.title=o?"Back to the map (O)":"Show the plan as an indented list with every note (O)";$("fit").disabled=o;
-  if(save){try{localStorage.setItem("canopy:view",o?"outline":"map")}catch(e){}}
-  if(o)renderOutline();else fit(false,{readable:true});
+// Split needs room: on a narrow window it falls back to the map, and returns when the window is wide again.
+let wantSplit=false;
+addEventListener("resize",()=>{if(VIEW==="split"&&stage.clientWidth<900){wantSplit=true;setView("map",{save:false});}
+  else if(wantSplit&&VIEW==="map"&&stage.clientWidth>=900){wantSplit=false;setView("split",{save:false});}
+  if(LIST())padOutline();});
+function setView(v,{save=true}={}){if(v===true)v="outline";if(v===false)v="map";if(save)wantSplit=false;VIEW=v;OUT=v==="outline";
+  stage.classList.toggle("split",v==="split");if(LIST())padOutline();$("outline").hidden=!LIST();$("svg").style.visibility=OUT?"hidden":"";
+  document.querySelector(".island").style.display=OUT?"none":"";tip.style.opacity=0;
+  [["vmap","map"],["vsplit","split"],["view","outline"]].forEach(([id,x])=>$(id).setAttribute("aria-pressed",String(v===x)));$("fit").disabled=OUT;
+  if(save){try{localStorage.setItem("canopy:layout",v)}catch(e){}}
+  renderOutline();if(MAP())fit(false,{readable:true});
   if(cur){focusNode(cur);ensureVisible(cur);}}
+function cycleView(){const order=stage.clientWidth>=900?["map","split","outline"]:["map","outline"];setView(order[(order.indexOf(VIEW)+1)%order.length]);
+  toast({map:"Map",split:"Map and outline",outline:"Outline"}[VIEW]);}
 
 // ---------- camera
 const T=()=>d3.zoomTransform(svg.node());
@@ -617,8 +682,8 @@ function bounds(list){let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
 // readable: never zoom out below MINK (13px labels stay about 10px); the map then starts at its left edge,
 // centred on the selected node, and you pan for the rest. F / Fit always shows the whole map.
 const MINK=0.77;
-function fit(anim=true,{readable=false,nodes=null}={}){if(OUT)return;const b=bounds(nodes),w=stage.clientWidth,h=stage.clientHeight;if(!(b.width>0))return;
-  const M=24,lg=$("legend"),fd=document.querySelector(".find"),top=M+(fd?fd.offsetHeight+6:0),bot=M+(lg&&lg.style.display!=="none"?lg.offsetHeight+10:0),rt=M+44;   // clear of the search bar, legend and zoom buttons
+function fit(anim=true,{readable=false,nodes=null}={}){if(!MAP())return;const b=bounds(nodes),w=mapW(),h=stage.clientHeight;if(!(b.width>0))return;
+  const M=24,fd=document.querySelector(".find"),top=M+(fd?fd.offsetHeight+6:0),bot=M+48,rt=M;   // clear of the search bar, legend and zoom buttons
   const aw=Math.max(80,w-M-rt),ah=Math.max(80,h-top-bot);
   const k=Math.min(1.15,Math.max(.05,Math.min(aw/b.width,ah/b.height)));
   if(readable&&k<MINK){const a=nodes&&nodes.length?(nodes.includes(cur)?cur:nodes[0]):cur&&visible().includes(cur)?cur:root;
@@ -626,7 +691,7 @@ function fit(anim=true,{readable=false,nodes=null}={}){if(OUT)return;const b=bou
     return moveTo(d3.zoomIdentity.translate(tx,top+ah/2-a.x*MINK).scale(MINK),anim);}
   moveTo(d3.zoomIdentity.translate(M+(aw-b.width*k)/2-b.x*k,top+(ah-b.height*k)/2-b.y*k).scale(k),anim)}
 function showChildren(t,d){
-  const w=stage.clientWidth,h=stage.clientHeight,M=28,ns=d.children||[];if(!ns.length)return t;
+  const w=mapW(),h=stage.clientHeight,M=28,ns=d.children||[];if(!ns.length)return t;
   const x1=Math.max(...ns.map(c=>c.y+W(c)+CH(c)+40)),y0=Math.min(...ns.map(c=>c.x-H(c)/2))-5,y1=Math.max(...ns.map(c=>c.x+H(c)/2))+5;
   let dx=0,dy=0;const right=t.applyX(x1),left=t.applyX(d.y);
   if(right>w-M)dx=(w-M)-right; if(left+dx<M)dx=M-left;
@@ -635,13 +700,13 @@ function showChildren(t,d){
   else{dy=M-top;const py=t.applyY(d.x)+dy;if(py>h-M)dy-=py-(h-M);}
   return t.translate(dx/t.k,dy/t.k);
 }
-function ensureVisible(d){if(OUT){const r=rowEl(d);if(r)r.scrollIntoView({block:"nearest"});return}
-  const t=T(),w=stage.clientWidth,h=stage.clientHeight,M=30,fd=document.querySelector(".find"),lg=$("legend");
-  const top=M+(fd?fd.offsetHeight+10:0),bot=M+(lg&&lg.style.display!=="none"?lg.offsetHeight+10:0);
+function ensureVisible(d){if(LIST()){const r=rowEl(d);if(r)r.scrollIntoView({block:"nearest"});}if(!MAP())return;
+  const t=T(),w=mapW(),h=stage.clientHeight,M=30,fd=document.querySelector(".find");
+  const top=M+(fd?fd.offsetHeight+10:0),bot=M+48;
   const x0=t.applyX(d.y),x1=t.applyX(d.y+W(d)+CH(d)+44),y=t.applyY(d.x);let dx=0,dy=0;
   if(x1>w-M-44)dx=(w-M-44)-x1;if(x0+dx<M)dx=M-x0;if(y<top)dy=top-y+20;else if(y>h-bot)dy=(h-bot)-y-20;
   if(dx||dy)moveTo(t.translate(dx/t.k,dy/t.k));}
-function pulse(d){if(OUT||reduce)return;const e=nodeEl(d);if(!e)return;e.classList.remove("pulse");e.getBoundingClientRect();e.classList.add("pulse");setTimeout(()=>e.classList.remove("pulse"),800);}
+function pulse(d){if(!MAP()||reduce)return;const e=nodeEl(d);if(!e)return;e.classList.remove("pulse");e.getBoundingClientRect();e.classList.add("pulse");setTimeout(()=>e.classList.remove("pulse"),800);}
 
 // ---------- actions
 function toggle(d,{user=true}={}){
@@ -673,7 +738,7 @@ function setDepth(n){ALL.forEach(d=>{if(d.depth<1||!kids(d))return;const open=d.
   update(root);paint();renderPanel();counts();queueSave(true);fit(true,{readable:true});toast(n>1?`Showing ${n} levels`:"Top level only");}
 // Walk mode: after Keep or Cut, go straight to the next item not covered yet (Change and Ask stay, for the note).
 let WALK=true;try{WALK=localStorage.getItem("canopy:walk")!=="0"}catch(e){}
-function toggleWalk(){WALK=!WALK;try{localStorage.setItem("canopy:walk",WALK?"1":"0")}catch(e){}
+function toggleWalk(){WALK=!WALK;try{localStorage.setItem("canopy:walk",WALK?"1":"0")}catch(e){}$("walk").setAttribute("aria-pressed",String(WALK));
   toast(WALK?"Walk mode on: K or X moves to the next item":"Walk mode off");}
 // K X C A all leave focus on the map (typing never lands in a note by surprise); Enter writes a note, U undoes.
 const undoStack=[];
@@ -681,7 +746,7 @@ function setDecision(d,k){if(sealed)return;if(!d){toast("Select a node first: cl
   const was=store.decisions[d.nid]?{...store.decisions[d.nid]}:null;undoStack.push({id:d.nid,was});if(undoStack.length>200)undoStack.shift();
   const e=store.decisions[d.nid]||{d:"",t:""};const prev=e.d;e.d=e.d===k?"":k;
   if(e.d||e.t.trim())store.decisions[d.nid]=e;else delete store.decisions[d.nid];
-  tip.style.opacity=0;markSeen(d.top);queueSave();paint();renderPanel();counts();autoHideLegend();
+  tip.style.opacity=0;markSeen(d.top);queueSave();paint();renderPanel();counts();
   if(WALK&&(e.d==="keep"||e.d==="cut"))setTimeout(()=>{if(!modalOpen()&&!sealed)nextUnreviewed(1)},160);
   const nm=d.data.name.length>40?d.data.name.slice(0,39)+"…":d.data.name;
   toast(e.d?`${DEC[e.d].label}: ${nm} · Enter to ${e.d==="change"?"say what should change":e.d==="ask"?"write your question":"add a note"} · U to undo`:`Removed ${DEC[prev].label} from ${nm} · U to undo`,4200);
@@ -704,7 +769,7 @@ function applyFilter(){computeMatches();
   if(filtering()&&MATCH.size){let ch=false;MATCH.forEach(d=>{for(let a=d.parent;a;a=a.parent)if(a._children){a.children=a._children;a._children=null;ch=true}});
     if(ch){update(root);queueSave(true);}else paint();
     // Show the matches: all of them when they fit at reading size, else starting from the first.
-    if(!OUT)fit(true,{readable:true,nodes:MLIST});return}
+    if(MAP())fit(true,{readable:true,nodes:MLIST});return}
   paint();}
 
 // ---------- side panel
@@ -906,7 +971,8 @@ document.addEventListener("keydown",e=>{
     case"N":nextUnreviewed(e.shiftKey?-1:1);break;
     case"u":case"U":undo();break;
     case"f":case"F":if(OUT)toast("Fit works on the map. Press O to go back to it.");else fit();break;
-    case"o":case"O":setView(!OUT);break;
+    case"o":case"O":cycleView();break;
+    case"?":openHelp();break;
     case"t":case"T":cycleTheme();break;
     case"w":case"W":toggleWalk();break;
     case"1":case"2":case"3":case"4":setDepth(+e.key);break;
@@ -921,10 +987,12 @@ $("gatehint").onclick=()=>{const t=missingTops()[0];if(!t)return;if(t._children)
 function zoomBy(f){if(OUT){toast("Zoom works on the map. Press O to go back to it.");return}(reduce?svg:svg.transition().duration(200)).call(zoom.scaleBy,f);}
 $("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});update(root);queueSave(true);counts();
   fit(true,{readable:true});let hinted=null;try{hinted=sessionStorage.getItem("canopy:exphint")}catch(e){}
-  if(!OUT&&visible().length>40&&!hinted){toast("Showing everything at reading size: drag to pan, F for the whole map, O for a list",5000);try{sessionStorage.setItem("canopy:exphint","1")}catch(e){}}};
+  if(MAP()&&visible().length>40&&!hinted){toast("Showing everything at reading size: drag to pan, F for the whole map, O for a list",5000);try{sessionStorage.setItem("canopy:exphint","1")}catch(e){}}};
 $("collapse").onclick=()=>{ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null}});if(cur&&cur.depth>1)cur=cur.top;update(root);paint();renderPanel();queueSave(true);fit(true,{readable:true})};
 $("fit").onclick=()=>fit();
-$("view").onclick=()=>setView(!OUT);
+$("vmap").onclick=()=>setView("map");$("vsplit").onclick=()=>setView("split");$("view").onclick=()=>setView("outline");
+$("walk").onclick=()=>toggleWalk();$("helpbtn").onclick=()=>openHelp();$("helpx").onclick=closeModal;
+function openHelp(){const hc=$("helpcount");hc.textContent="Items are the nodes with no children. A decision on a branch counts for everything under it that has no decision of its own."+(CFG.gate?" "+GATE_RULE+".":"");openModal("help");}
 $("theme").onclick=cycleTheme;
 let qT=null;
 $("q").addEventListener("input",e=>{clearTimeout(qT);qT=setTimeout(()=>{FQ=e.target.value.trim().toLowerCase();applyFilter();renderResults();},180);});
@@ -940,12 +1008,10 @@ $("flt").addEventListener("change",e=>{FK=e.target.value;applyFilter();});
 $("zin").onclick=()=>zoomBy(1.25);
 $("zout").onclick=()=>zoomBy(0.8);
 
-const LGK="canopy:legend";
-(function(){const lg=$("legend");let v=null;try{v=localStorage.getItem(LGK)}catch(e){}
-  let first=true;try{first=!localStorage.getItem("canopy:visited");localStorage.setItem("canopy:visited","1")}catch(e){}
-  const want=v?v==="open":first&&stage.clientHeight>=420;if(want!==lg.open){lg.dataset.auto="1";lg.open=want;}
-  lg.addEventListener("toggle",()=>{if(lg.dataset.auto){delete lg.dataset.auto;return}try{localStorage.setItem(LGK,lg.open?"open":"closed")}catch(e){}});})();
-function autoHideLegend(){const lg=$("legend");let v=null;try{v=localStorage.getItem(LGK)}catch(e){}if(lg.open&&!v){lg.dataset.auto="1";lg.open=false;}}
+$("walk").setAttribute("aria-pressed",String(WALK));
+// First visit: one short tip instead of a legend over the map.
+(function(){let first=false;try{first=!localStorage.getItem("canopy:visited");localStorage.setItem("canopy:visited","1")}catch(e){}
+  if(first)setTimeout(()=>toast("Select a node, then K Keep · X Cut · C Change · A Ask. Press ? for all keys.",7000),600);})();
 (function(){if(!RD)return;const nc=Object.keys(RCHG).length,nn=RNEW.size,nr=RD.removed.length,ch=$("roundchip");
   const parts=[nc?`${nc} changed`:"",nn?`${nn} new`:"",nr?`${nr} removed`:""].filter(Boolean);
   ch.textContent=`Round ${RD.n}`+(parts.length?" · "+parts.join(" · "):" · no changes");ch.hidden=false;
@@ -955,7 +1021,10 @@ function autoHideLegend(){const lg=$("legend");let v=null;try{v=localStorage.get
   if(!CFG.draft)ALL.filter(d=>diffOf(d)).forEach(d=>{for(let a=d.parent;a;a=a.parent)if(a._children){a.children=a._children;a._children=null}});})();
 renderRemoved();
 update(root);fit(false,{readable:true});renderPanel();counts();
-(function(){let v=null;try{v=localStorage.getItem("canopy:view")}catch(e){}if(v==="outline")setView(true,{save:false});
+(function(){let v=null;try{v=localStorage.getItem("canopy:layout")||(localStorage.getItem("canopy:view")==="outline"?"outline":null)}catch(e){}
+  // Wide screens open with the map and the outline side by side; your last choice wins.
+  if(!["map","split","outline"].includes(v))v=stage.clientWidth>=1100?"split":"map";
+  if(v==="split"&&stage.clientWidth<900){v="map";setView(v,{save:false});wantSplit=true;}else setView(v,{save:false});
   // Pick up where you left off: reselect the node you were on.
   const d=restoredCur&&byId.get(restoredCur);if(d&&d!==root){reveal(d);select(d,{focus:false});}})();
 </script></body></html>

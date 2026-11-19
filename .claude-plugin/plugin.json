@@ -1,7 +1,7 @@
 {
   "name": "canopy",
   "displayName": "Canopy",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Tree-shaped review and approval gate: Claude's plan opens as a collapsible map in your browser, you rule Keep / Cut / Change / Ask on each node, and the decisions return to the same session before any code is written. Local and offline.",
   "author": { "name": "Aswin", "url": "https://github.com/Aswin1819" },
   "license": "MIT",

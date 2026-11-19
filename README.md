@@ -97,10 +97,10 @@ Any consistent indent works, `-`, `*`, `+` and `1.` bullets work, only ` :: ` (w
 - Arrow keys move through the tree (→ opens, ← closes or goes to the parent), Space opens, Enter writes a note, Esc returns to the map.
 - `K` `X` `C` `A` set a decision (press again to clear) and keep you on the map; a notice offers Enter for a note and `U` (or Ctrl+Z) to undo.
 - "Covered n/N items" counts end items (nodes with no children) that have a decision, or sit under a branch with one. `N` / `Shift+N` jump to the next or previous item not covered yet; `W` turns on walk mode (Keep or Cut moves on by itself).
-- `1`–`4` show that many levels, **Expand all** keeps labels readable, `F` fits the whole map, `O` switches to an outline with every note, `/` searches, and the filter shows what is not covered yet, your decisions, Change or Ask, human steps, to-do or done items (and, from round 2, what changed).
+- `1`–`4` show that many levels, **Expand all** keeps labels readable, `F` fits the whole map, `O` cycles **Map / Split / List** (on wide screens the map and an outline with every note open side by side), `/` searches, and the filter shows what is not covered yet, your decisions, Change or Ask, human steps, to-do or done items (and, from round 2, what changed).
 - **Send review**, **Approve** and **Request changes** each open a summary sheet first (counts, every decision, warnings such as "Change with no text"), with Copy as Markdown and Download JSON.
 - **Close…** asks for confirmation in the page and keeps your draft.
-- Decision badges carry a letter (K, X, C, A, ✎) on their own colours, which no branch colour uses (see [docs/brand.md](docs/brand.md)). Items covered by a branch decision show a hollow badge. Cut nodes are struck through and their subtree dimmed. A legend sits bottom left.
+- Decision badges carry a letter (K, X, C, A, ✎) on their own colours, which no branch colour uses (see [docs/brand.md](docs/brand.md)). Items covered by a branch decision show a hollow badge. Cut nodes are struck through and their subtree dimmed. Nodes added, changed or moved since the last round carry a small chip on the map, and a parent shows how many of its children were removed. Hovering a node shows a card with its place, priority, first line and your decision. Zoom, Fit, walk mode and `?` (all keys and colours) sit in one small group at the bottom right.
 
 ## Security
 

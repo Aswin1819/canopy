@@ -40,7 +40,7 @@ DISPLAY_NAME = "Canopy"
 ENV_PREFIX = "CANOPY_"            # CANOPY_PORT, CANOPY_BROWSER, CANOPY_DATA_DIR
 FALLBACK_DATA_DIR = Path.home() / ("." + TOOL_NAME)
 
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 MAX_BODY = 1024 * 1024
 MAX_TEXT = 20000
 MAX_OPEN = 5000
@@ -144,7 +144,7 @@ def normalise(doc):
     if not isinstance(doc, dict):
         raise ValueError("top level must be a JSON object")
     if "root" not in doc:  # bare tree
-        doc = {"title": doc.get("name", "Mind map"), "root": doc}
+        doc = {"title": doc.get("name", "Plan"), "root": doc}
     warnings, seen_ids = [], {}
 
     def walk(n, where, parent_id, depth):
@@ -369,6 +369,34 @@ def round_path(ddir, source):
     return Path(ddir) / "rounds" / f"{h}.json", h
 
 
+def snapshot(doc):
+    """What a round looked like: {id: [name, note]} for every node."""
+    return {n["id"]: [n["name"], n.get("note", "")] for n, _p, _t in walk_nodes(doc["root"])}
+
+
+def round_diff(doc, last):
+    """Compare this round's tree with the last sent round of the same plan file.
+    Returns None for a first round, else {n, new, changed, removed, said}."""
+    if not isinstance(last, dict) or not isinstance(last.get("nodes"), dict):
+        return None
+    before, now = last["nodes"], snapshot(doc)
+    said = {k: v for k, v in (last.get("decisions") or {}).items() if isinstance(v, dict)}
+    paths = {n["id"]: p for n, p, _t in walk_nodes(doc["root"])}
+    changed = {}
+    for i, (name, note) in now.items():
+        old = before.get(i)
+        if isinstance(old, list) and len(old) == 2 and old != [name, note]:
+            changed[i] = {"name": old[0], "note": old[1]}
+    return {
+        "n": int(last.get("n") or 1) + 1,
+        "new": [i for i in now if i not in before and i != doc["root"]["id"]],
+        "changed": changed,
+        "removed": [{"id": i, "name": v[0] if isinstance(v, list) and v else str(i), "said": said.get(i)}
+                    for i, v in before.items() if i not in now][:500],
+        "said": {i: v for i, v in said.items() if i in paths},
+    }
+
+
 def read_draft(p):
     try:
         d = json.loads(Path(p).read_text(encoding="utf-8"))
@@ -415,6 +443,8 @@ class Session:
         self.token = tok if isinstance(tok, str) and re.fullmatch(r"[A-Za-z0-9_-]{24,64}", tok) else secrets.token_urlsafe(24)
         p = prev.get("port")
         self.port_hint = p if isinstance(p, int) and 1024 <= p <= 65535 else ROUND_PORT_BASE + int(rh, 16) % ROUND_PORT_SPAN
+        self.round_prev = prev
+        self.diff = round_diff(doc, prev.get("last"))
         self.inst = secrets.token_hex(6)   # this process: a finished tab tells the next round by a different one
         self.rev = hashlib.sha256(json.dumps(doc, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
         self.done = threading.Event()
@@ -433,7 +463,8 @@ class Session:
         draft = read_draft(self.draft_file)
         cfg = {"token": self.token, "gate": bool(self.args.gate), "hb": int(self.args.heartbeat_sec * 1000),
                "draft": draft, "draftKey": self.draft_file.stem, "tool": TOOL_NAME, "display": DISPLAY_NAME,
-               "header": TOKEN_HEADER, "version": VERSION, "rev": self.rev, "inst": self.inst}
+               "header": TOKEN_HEADER, "version": VERSION, "rev": self.rev, "inst": self.inst,
+               "round": self.diff}
         doc = {k: v for k, v in self.doc.items() if not k.startswith("_")}
 
         def island(o):
@@ -640,7 +671,7 @@ def main(argv=None):
     srv.daemon_threads = True
     sess.port = srv.server_address[1]
     try:
-        write_draft(sess.round_file, {"token": sess.token, "port": sess.port, "source": str(Path(a.source).resolve())})
+        write_draft(sess.round_file, dict(sess.round_prev, token=sess.token, port=sess.port, source=str(Path(a.source).resolve())))
     except OSError as e:
         warn(f"could not remember this plan's address: {e}")
     url = f"http://127.0.0.1:{sess.port}/s/{sess.token}/"
@@ -668,6 +699,16 @@ def main(argv=None):
 
     res = build_result(doc, sess.status, sess.payload, gate=a.gate)
     if sess.status in ("submitted", "approved", "changes_requested"):
+        # Remember this round, so the next one can show what changed and what was said about it.
+        try:
+            raw = (sess.payload or {}).get("decisions") or {}
+            said = {k: {"d": str(v.get("d") or ""), "t": str(v.get("t") or "")[:MAX_TEXT]}
+                    for k, v in raw.items() if isinstance(v, dict) and (v.get("d") or str(v.get("t") or "").strip())} if isinstance(raw, dict) else {}
+            rp = read_draft(sess.round_file) or {}
+            rp["last"] = {"n": (sess.diff or {}).get("n", 1), "status": sess.status, "nodes": snapshot(doc), "decisions": said}
+            write_draft(sess.round_file, rp)
+        except Exception as e:
+            warn(f"could not remember this round: {e}")
         try:
             sess.draft_file.unlink()
         except OSError:

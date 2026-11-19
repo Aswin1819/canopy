@@ -33,7 +33,7 @@ Bash tool with `run_in_background: true` and `timeout: 7200000`:
 ```
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json [--gate] [--export-plan PLAN.md]
 ```
-(PowerShell: `& "${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json`.) The launcher picks `python3`, `python` or `py -3`. Read the first line of the task output once to get the URL (`Mind map review ready: http://127.0.0.1:PORT/s/TOKEN/`), give it to the person and say: click a label to select, `+` to open, K / X / C / A to decide, add text for Change and Ask, then Review & send (or Approve / Request changes). Each plan file keeps the same URL on every round (same port and token), so for a second round edit the same file and re-run the same command; the tab left open on the last round offers "Open the next round" by itself.
+(PowerShell: `& "${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json`.) The launcher picks `python3`, `python` or `py -3`. Read the first line of the task output once to get the URL (`Canopy ready: http://127.0.0.1:PORT/s/TOKEN/`), give it to the person and say: click a label to select, `+` to open, K / X / C / A to decide, add text for Change and Ask, then Review & send (or Approve / Request changes). Each plan file keeps the same URL on every round (same port and token), so for a second round edit the same file and re-run the same command; the tab left open on the last round offers "Open the next round" by itself.
 
 ## 3. Wait, then act on the result
 Don't poll or kill the task; you are notified when it exits. JSON shape:

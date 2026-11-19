@@ -5,10 +5,15 @@
 ![Canopy demo: open a branch, Keep / Cut / Ask, review and send](docs/demo.gif)
 
 - **Per-node decisions**, one key each: `K` Keep, `X` Cut, `C` Change, `A` Ask, plus optional text.
-- **Approval gate** (`--gate`): Approve unlocks only after you have opened or ruled on every top-level branch. No blind "approve all".
+- **Approval gate** (`--gate`): Approve unlocks once you have opened or decided on every top-level branch. No blind "approve all". With Cut, Change or Ask decisions it becomes **Approve with notes**.
+- **Review rounds**: the same plan keeps the same link. On round 2 every node Claude added or changed is marked, the panel shows the old text and what you said last time, and removed nodes are listed. One click filters to "Changed since last round".
 - **Structured output** with stable node ids (`--json`), or Markdown for a quick read.
 - **Local and offline.** Python standard library and a bundled d3. No CDN, no web fonts, no telemetry. The page is served only on `127.0.0.1`, behind a per-session token.
 - **Drafts survive** a reload, a closed tab, a timeout or a re-run.
+- **Light and dark themes** that follow your system (or press `T`), with decision colours that keep the same meaning and contrast in both.
+
+### Why a tree, not line comments
+Most plan reviewers annotate text. Canopy decides on scope: one decision per node, and a decision on a branch covers everything under it, so cutting a whole area is one key. Decisions come back as JSON with stable node ids that Claude can apply exactly, and the gate proves every top-level branch was looked at before Approve.
 
 ## Install
 
@@ -39,7 +44,7 @@ The launcher tries `python3`, then `python`, then `py -3`, and skips any that is
 
 | Flag | Meaning |
 |---|---|
-| `--gate` | Show **Approve** and **Request changes** instead of **Review & send** |
+| `--gate` | Show **Approve** and **Request changes** instead of **Send review** |
 | `--json` | Print one JSON object instead of Markdown |
 | `--export-plan PLAN.md` | On approve/submit, write the tree as a Markdown checklist with Cut items removed |
 | `--data-dir DIR` | Drafts root. Default `$CLAUDE_PLUGIN_DATA`, else `~/.canopy` |
@@ -89,12 +94,13 @@ Any consistent indent works, `-`, `*`, `+` and `1.` bullets work, only ` :: ` (w
 ## In the browser
 
 - Click a **label** to select; click **+ / −** to open or close. The clicked node stays under the cursor, and opening a branch pans so its children are visible.
-- Arrow keys move through the tree (→ opens, ← closes or goes to the parent), Space opens, Enter jumps to the note box, Esc returns to the map.
-- `K` `X` `C` `A` set a decision (press again to clear). Change and Ask move focus to the note box.
-- "Reviewed n/N" counts nodes with a decision; `N` jumps to the next one without.
-- **Review & send**, **Approve** and **Request changes** each open a summary sheet first (counts, every decision, warnings such as "Change with no text").
+- Arrow keys move through the tree (→ opens, ← closes or goes to the parent), Space opens, Enter writes a note, Esc returns to the map.
+- `K` `X` `C` `A` set a decision (press again to clear) and keep you on the map; a notice offers Enter for a note and `U` (or Ctrl+Z) to undo.
+- "Covered n/N items" counts end items (nodes with no children) that have a decision, or sit under a branch with one. `N` / `Shift+N` jump to the next or previous item not covered yet; `W` turns on walk mode (Keep or Cut moves on by itself).
+- `1`–`4` show that many levels, **Expand all** keeps labels readable, `F` fits the whole map, `O` switches to an outline with every note, `/` searches, and the filter shows what is not covered yet, your decisions, Change or Ask, human steps, to-do or done items (and, from round 2, what changed).
+- **Send review**, **Approve** and **Request changes** each open a summary sheet first (counts, every decision, warnings such as "Change with no text"), with Copy as Markdown and Download JSON.
 - **Close…** asks for confirmation in the page and keeps your draft.
-- Decision badges carry a letter (K, X, C, A, ✎) on their own colours, which no branch colour uses. Cut nodes are struck through and their subtree dimmed. A legend sits bottom left.
+- Decision badges carry a letter (K, X, C, A, ✎) on their own colours, which no branch colour uses (see [docs/brand.md](docs/brand.md)). Items covered by a branch decision show a hollow badge. Cut nodes are struck through and their subtree dimmed. A legend sits bottom left.
 
 ## Security
 

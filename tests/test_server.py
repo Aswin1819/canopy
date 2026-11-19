@@ -238,6 +238,31 @@ class TestFlows(ServerCase):
         self.assertNotEqual(json.loads(body)["rev"], rev1)
         self.assertEqual(s2.req("GET", "/s/wrong-token/round")[0], 404)
 
+    def test_round_diff_between_rounds(self):
+        s1 = self.start("--json")
+        s1.post("/api/submit", {"action": "submit", "decisions": {"be/api": {"d": "change", "t": "GraphQL"},
+                                                                   "docs": {"d": "cut", "t": ""}}})
+        s1.finish()
+        tree2 = json.loads(json.dumps(TREE))
+        tree2["root"]["children"][0]["children"][0]["note"] = "GraphQL"   # be/api changed
+        tree2["root"]["children"].pop()                                    # docs removed
+        tree2["root"]["children"].append({"name": "Rollout"})              # new
+        doc2, _ = mr.normalise(json.loads(json.dumps(tree2)))
+        last = json.loads((Path(self.tmp) / "data" / "rounds").glob("*.json").__next__().read_text(encoding="utf-8"))["last"]
+        d = mr.round_diff(doc2, last)
+        self.assertEqual(d["n"], 2)
+        self.assertEqual(d["changed"], {"be/api": {"name": "API", "note": "REST"}})
+        self.assertEqual(d["new"], ["rollout"])
+        self.assertEqual([r["id"] for r in d["removed"]], ["docs"])
+        self.assertEqual(d["removed"][0]["said"]["d"], "cut")
+        self.assertEqual(d["said"]["be/api"], {"d": "change", "t": "GraphQL"})
+        self.assertIsNone(mr.round_diff(doc2, None))
+        s2 = self.start("--json", tree=tree2)
+        st, html, _ = s2.req("GET", f"/s/{s2.token}/")
+        self.assertEqual(st, 200)
+        self.assertIn('"changed"', html)
+        self.assertIn('"rollout"', html)
+
     def test_close_keeps_draft(self):
         s = self.start("--json")
         st, _, _ = s.post("/api/draft", {"decisions": {"docs": {"d": "keep", "t": "x"}}, "general": "g", "seen": ["docs"],

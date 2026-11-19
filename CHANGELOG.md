@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.2.0 (2026-11-19)
+One colour system with a dark theme, round-to-round review, and consistent wording. Shaped by a brand audit and a look at similar tools (Plannotator, PR review, mind-map tools).
+
+### Review rounds
+- On round 2 and later, every node Claude added or changed is marked (a dot on the map, a tag in the outline), and the panel shows the old text and what you said last round. Removed nodes are listed with your old decision. A header chip ("Round 2 · 3 changed · 1 new · 1 removed") filters to what changed, and a fresh round opens the way to every change.
+- The server keeps the last sent round next to the plan's address (nodes and decisions) and sends the difference to the page.
+- In a gate review with Cut, Change or Ask decisions, Approve becomes **Approve with notes**, and the end screen says Claude treats them as guidance.
+
+### Colour and theme
+- Every colour is a token: neutrals, decisions, status and eight branch hues, each with light and dark values. Nothing in the CSS or the script is hard-coded any more.
+- Dark theme that follows the system, or press `T` (or the ◐ button) for light, dark or system; remembered per browser.
+- Decision colours keep the same hex in both themes and pass contrast in both (white text ≥ 5:1, fill ≥ 3:1 on every surface). Cut, Ask and Note were below 3:1 on dark before.
+- New branch palette (canopy teal, dusk indigo, iris violet, orchid, rose, moss, ochre, bark) that stays clear of the decision and focus colours; the two slate branches that looked like Note are gone.
+- Inputs get a 3.5:1 edge; one type scale, radius set and shadow set; the icon's leaves now use branch colours instead of decision colours.
+- `docs/brand.md`: the palette, contrast numbers, type and shape rules, and a glossary.
+
+### Large trees
+- `1`–`4` show that many levels. `W` turns on walk mode: Keep or Cut moves straight to the next item not covered yet.
+
+### Wording
+- "Covered n/N items", "Send review…", "Collapse all", "Saved · 14:02", "to do", "human step"; the gate rule is one sentence everywhere ("Approve unlocks once you have opened or decided on every top-level branch").
+- The skill now tells Claude to look for the line the server really prints ("Canopy ready: …"), and a bare tree with no name is titled "Plan".
+- README: corrected keyboard behaviour and the progress counter, added rounds, themes and why a tree beats line comments.
+
 ## 1.1.1 (2026-11-18)
 Fixes from a full review done with the Claude in Chrome extension, and a stable link between review rounds.
 

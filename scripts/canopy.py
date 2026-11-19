@@ -40,7 +40,7 @@ DISPLAY_NAME = "Canopy"
 ENV_PREFIX = "CANOPY_"            # CANOPY_PORT, CANOPY_BROWSER, CANOPY_DATA_DIR
 FALLBACK_DATA_DIR = Path.home() / ("." + TOOL_NAME)
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 MAX_BODY = 1024 * 1024
 MAX_TEXT = 20000
 MAX_OPEN = 5000
@@ -190,7 +190,12 @@ def normalise(doc):
     root = walk(doc["root"], "root", None, 0)
     title = str(doc.get("title") or root["name"])
     sub = doc.get("subtitle")
-    return {"title": title, "subtitle": str(sub) if sub else "", "root": root}, warnings
+    out = {"title": title, "subtitle": str(sub) if sub else "", "root": root}
+    # Nodes Claude removed on purpose, with the reason: {"id": "why"}; shown in the next round's removed list.
+    dropped = doc.get("dropped")
+    if isinstance(dropped, dict):
+        out["dropped"] = {str(k)[:300]: str(v)[:MAX_TEXT] for k, v in list(dropped.items())[:500] if isinstance(v, str)}
+    return out, warnings
 
 
 def load(path):
@@ -370,30 +375,72 @@ def round_path(ddir, source):
 
 
 def snapshot(doc):
-    """What a round looked like: {id: [name, note]} for every node."""
-    return {n["id"]: [n["name"], n.get("note", "")] for n, _p, _t in walk_nodes(doc["root"])}
+    """What a round looked like: {id: [name, note, parent id]} for every node."""
+    out = {}
+
+    def rec(n, parent):
+        out[n["id"]] = [n["name"], n.get("note", ""), parent]
+        for c in n["children"]:
+            rec(c, n["id"])
+    rec(doc["root"], None)
+    return out
 
 
 def round_diff(doc, last):
-    """Compare this round's tree with the last sent round of the same plan file.
-    Returns None for a first round, else {n, new, changed, removed, said}."""
+    """Compare this round's tree with the last sent round of the same plan file, matching nodes by id.
+    Returns None for a first round, else:
+      n        round number
+      new      ids not in the last round
+      changed  {id: {name, note}}: old text of nodes whose name or note changed (their decision needs a recheck)
+      moved    {id: old parent id}: same node under a different parent
+      removed  [{id, name, said, reason}]: gone this round; reason from the tree's "dropped" map
+      said     {id: {d, t}}: last round's decisions for nodes still here
+      carried  {id: {d, t, from}}: decisions that apply again without a new look: the node's own when its text is
+               unchanged (wherever it moved), else a removed branch's Keep/Cut/Change/Ask passed down to its old
+               descendants that are still here, unchanged, and had no decision of their own"""
     if not isinstance(last, dict) or not isinstance(last.get("nodes"), dict):
         return None
     before, now = last["nodes"], snapshot(doc)
+    text = lambda v: [v[0], v[1]] if isinstance(v, list) and len(v) >= 2 else None
     said = {k: v for k, v in (last.get("decisions") or {}).items() if isinstance(v, dict)}
-    paths = {n["id"]: p for n, p, _t in walk_nodes(doc["root"])}
-    changed = {}
-    for i, (name, note) in now.items():
+    changed, moved, carried = {}, {}, {}
+    for i, v in now.items():
         old = before.get(i)
-        if isinstance(old, list) and len(old) == 2 and old != [name, note]:
-            changed[i] = {"name": old[0], "note": old[1]}
+        if old is None:
+            continue
+        if text(old) != text(v):
+            changed[i] = {"name": text(old)[0] if text(old) else "", "note": text(old)[1] if text(old) else ""}
+        elif i in said:
+            carried[i] = dict(said[i], **{"from": i})
+        if isinstance(old, list) and len(old) >= 3 and old[2] != v[2] and i != doc["root"]["id"]:
+            moved[i] = old[2]
+    kids = {}
+    for i, v in before.items():
+        if isinstance(v, list) and len(v) >= 3 and v[2] is not None:
+            kids.setdefault(v[2], []).append(i)
+    removed = [i for i in before if i not in now]
+    for r in removed:  # a removed branch's decision reaches its old descendants, nearest decision first
+        sv = said.get(r)
+        if not sv or str(sv.get("d") or "") not in DECISIONS:
+            continue
+        stack = list(kids.get(r, []))
+        while stack:
+            c = stack.pop()
+            if c in said:          # a decision of its own (kept or rechecked) wins, and covers its own subtree
+                continue
+            if c in now and c not in changed and c not in carried:
+                carried[c] = {"d": sv["d"], "t": "", "from": r}
+            stack.extend(kids.get(c, []))
+    reasons = doc.get("dropped") or {}
     return {
         "n": int(last.get("n") or 1) + 1,
         "new": [i for i in now if i not in before and i != doc["root"]["id"]],
         "changed": changed,
-        "removed": [{"id": i, "name": v[0] if isinstance(v, list) and v else str(i), "said": said.get(i)}
-                    for i, v in before.items() if i not in now][:500],
-        "said": {i: v for i, v in said.items() if i in paths},
+        "moved": moved,
+        "removed": [{"id": i, "name": text(before[i])[0] if text(before[i]) else str(i), "said": said.get(i),
+                     "reason": reasons.get(i, "")} for i in removed][:500],
+        "said": {i: v for i, v in said.items() if i in now},
+        "carried": carried,
     }
 
 
@@ -415,9 +462,8 @@ def write_draft(p, d):
 
 # --------------------------------------------------------------------------- server
 def gate_missing(doc, payload):
-    """Top-level branch ids that have not been looked at (expanded/selected) or decided.
-    Keep/Cut/Change/Ask on the root covers every branch."""
-    seen = set(payload.get("seen") or [])
+    """Top-level branch ids without a decision: a branch counts once it, or something in it, has Keep / Cut /
+    Change / Ask (a note alone does not, and opening it does not). A decision on the root covers every branch."""
     dec = payload.get("decisions") or {}
     rv = dec.get(doc["root"]["id"]) if isinstance(dec, dict) else None
     if isinstance(rv, dict) and str(rv.get("d") or "").lower() in DECISIONS:
@@ -425,9 +471,9 @@ def gate_missing(doc, payload):
     decided_tops = set()
     for n, _p, top in walk_nodes(doc["root"]):
         v = dec.get(n["id"]) if isinstance(dec, dict) else None
-        if top and isinstance(v, dict) and (v.get("d") or str(v.get("t") or "").strip()):
+        if top and isinstance(v, dict) and str(v.get("d") or "").lower() in DECISIONS:
             decided_tops.add(top)
-    return [c["id"] for c in doc["root"]["children"] if c["id"] not in seen and c["id"] not in decided_tops]
+    return [c["id"] for c in doc["root"]["children"] if c["id"] not in decided_tops]
 
 
 class Session:

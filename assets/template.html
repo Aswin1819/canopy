@@ -62,7 +62,7 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
   color-scheme:dark;
   --bg:#11161c; --surface:#161c23; --raised:#1c232b; --hover:#232b34; --pressed:#2b3440;
-  --ink:#e6ebf0; --ink-soft:#c9d1d9; --muted:#9aa6b2; --on-ink:#11161c; --ink-hover:#c9d1d9;
+  --ink:#e6ebf0; --ink-soft:#c9d1d9; --muted:#aab5c0; --on-ink:#11161c; --ink-hover:#c9d1d9;
   --line:#2e3843; --line-control:#6b7785; --stage-dot:#1f2730; --focus:#8b98ff;
   --scrim:rgba(0,0,0,.6); --shadow-1:0 2px 6px rgba(0,0,0,.4); --shadow-2:0 8px 24px rgba(0,0,0,.5); --shadow-3:0 20px 60px rgba(0,0,0,.6);
   --overlay:rgba(28,35,43,.95);
@@ -79,7 +79,7 @@
 :root[data-theme=dark]{
   color-scheme:dark;
   --bg:#11161c; --surface:#161c23; --raised:#1c232b; --hover:#232b34; --pressed:#2b3440;
-  --ink:#e6ebf0; --ink-soft:#c9d1d9; --muted:#9aa6b2; --on-ink:#11161c; --ink-hover:#c9d1d9;
+  --ink:#e6ebf0; --ink-soft:#c9d1d9; --muted:#aab5c0; --on-ink:#11161c; --ink-hover:#c9d1d9;
   --line:#2e3843; --line-control:#6b7785; --stage-dot:#1f2730; --focus:#8b98ff;
   --scrim:rgba(0,0,0,.6); --shadow-1:0 2px 6px rgba(0,0,0,.4); --shadow-2:0 8px 24px rgba(0,0,0,.5); --shadow-3:0 20px 60px rgba(0,0,0,.6);
   --overlay:rgba(28,35,43,.95);
@@ -154,6 +154,12 @@ svg{width:100%;height:100%;display:block;cursor:grab} svg:active{cursor:grabbing
 .diff .was{color:var(--muted);text-decoration:line-through;overflow-wrap:anywhere}
 .diff .L{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:var(--r-xs);color:var(--on-decision);font-size:11px;font-weight:700;padding:0 3px;margin-right:4px;vertical-align:1px}
 .otag{font-size:11px;font-weight:700;border-radius:var(--r-pill);padding:0 6px;margin-left:6px;vertical-align:1px;color:var(--info-ink);background:var(--info-bg);border:1px solid var(--info-line)}
+.find{flex-wrap:wrap}
+.qres{flex-basis:100%;max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.qres[hidden]{display:none}
+.qr{display:block;text-align:left;width:100%;background:transparent;border:0;border-radius:var(--r-sm);padding:5px 8px;cursor:pointer;color:var(--ink);font:13px/1.35 var(--f)}
+.qr:hover,.qr.on{background:var(--hover)} .qr b{font-weight:600} .qr .qs{display:block;color:var(--muted);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qr mark{background:color-mix(in srgb,var(--focus) 25%,transparent);color:inherit;border-radius:2px}
 .btn.ic{width:34px;padding-left:0;padding-right:0;text-align:center}
 .btn.fx{padding:4px 8px;font-size:var(--fs-xs)}
 .L.Lo{background:var(--raised);border:1.5px solid;box-sizing:border-box}
@@ -193,7 +199,7 @@ svg{width:100%;height:100%;display:block;cursor:grab} svg:active{cursor:grabbing
 .note{font-size:var(--fs-md);line-height:1.5;color:var(--ink-soft);white-space:pre-wrap;overflow-wrap:anywhere}
 .tags{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
 .tag{font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
-.nid{font:12px var(--f-mono);color:var(--muted)}
+.nid{font:13px var(--f-mono);color:var(--muted)}
 .chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .chip{font-size:14px;font-weight:600;padding:6px 8px;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--line-control);background:var(--raised);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .chip .L{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:var(--r-xs);color:var(--on-decision);font-size:11px}
@@ -287,7 +293,7 @@ textarea[disabled]{background:var(--hover);border-color:var(--line)}
         <label class="sr" for="q">Search nodes</label><input id="q" type="search" placeholder="Search…  ( / )" autocomplete="off">
         <label class="sr" for="flt">Show</label>
         <select id="flt"><option value="">All nodes</option><option value="open">Not covered yet</option><option value="dec">With my decision</option><option value="ca">Change or Ask</option><option value="h">Human steps</option><option value="todo">To do (○)</option><option value="done">Done (✓)</option><option value="chg" hidden>Changed since last round</option></select>
-        <span class="fcount" id="fcount" aria-live="polite" hidden></span><button class="btn ghost fx" id="fclear" type="button" hidden title="Clear search and filter (Esc)">Clear</button>
+        <span class="fcount" id="fcount" aria-live="polite" hidden></span><div class="qres" id="qres" role="listbox" aria-label="Search results" hidden></div><button class="btn ghost fx" id="fclear" type="button" hidden title="Clear search and filter (Esc)">Clear</button>
       </div>
       <div class="tip" id="tip"></div>
       <div class="toast" id="toast" role="status" hidden></div>
@@ -375,10 +381,10 @@ const TOPS=root.children||root._children||[];
 let store={decisions:{},general:"",seen:new Set()};
 function lsGet(){try{return JSON.parse(localStorage.getItem("mmr:"+CFG.draftKey))}catch(e){return null}}
 function lsSet(o){try{localStorage.setItem("mmr:"+CFG.draftKey,JSON.stringify(o))}catch(e){}}
-let orphans=0,restoredCur=null;
+let orphans=0,restoredCur=null,restoredDraft=false;
 // The server draft and the browser copy can differ (edits made while the server was down): take the newer one.
 (function restore(){const a=CFG.draft,b=lsGet(),init=a&&b?((+b.ts||0)>(+a.ts||0)?b:a):(a||b);if(!init||typeof init!=="object")return;
-  if(typeof init.cur==="string")restoredCur=init.cur;
+  restoredDraft=true;if(typeof init.cur==="string")restoredCur=init.cur;
   for(const[k,v]of Object.entries(init.decisions||{})){if(!byId.has(k)){orphans++;continue}if(!v||typeof v!=="object")continue;
     const d=DECS.includes(v.d)?v.d:"",t=String(v.t||"").slice(0,20000);if(d||t)store.decisions[k]={d,t};}
   store.general=String(init.general||"");(init.seen||[]).forEach(id=>{if(byId.has(id))store.seen.add(id)});
@@ -398,8 +404,14 @@ function markSeen(top){if(top&&!store.seen.has(top.nid)){store.seen.add(top.nid)
 // Round diff (from the server): nodes new or changed since the last sent round, removed ones, and what you said then.
 const RD=CFG.round||null,RNEW=new Set(RD?RD.new:[]),RCHG=RD?RD.changed:{},RSAID=RD?RD.said:{};
 const diffOf=d=>RNEW.has(d.nid)?"new":RCHG[d.nid]?"changed":"";
-const GATE_RULE="Approve unlocks once you have opened or decided on every top-level branch";
-const missingTops=()=>ruled(root)?[]:TOPS.filter(t=>!store.seen.has(t.nid)&&!ALL.some(d=>d.top===t&&reviewed(d)));
+const RCAR=RD&&RD.carried||{},RMOV=RD&&RD.moved||{};
+// A fresh round (no draft yet) starts with last round's decisions on every unchanged node, so only new and
+// changed nodes need a look. A draft, once you start, is yours and wins.
+if(RD&&!restoredDraft)for(const[id,v]of Object.entries(RCAR)){if(byId.has(id)&&!store.decisions[id]){const d=DECS.includes(v.d)?v.d:"",t=String(v.t||"");if(d||t)store.decisions[id]={d,t};}}
+const nameOf=id=>byId.has(id)?byId.get(id).data.name:((RD&&RD.removed||[]).find(r=>r.id===id)||{name:id}).name;
+const GATE_RULE="Approve unlocks once every top-level branch has a decision (on the branch or anything in it)";
+// Opening a branch, Expand all or a note alone do not count; Keep / Cut / Change / Ask do.
+const missingTops=()=>ruled(root)?[]:TOPS.filter(t=>!ALL.some(d=>d.top===t&&ruled(d)));
 function payload(){return{decisions:store.decisions,general:store.general,seen:[...store.seen],open:openIds(),cur:cur?cur.nid:null,ts:Date.now()};}
 
 // ---------- server I/O
@@ -482,6 +494,16 @@ function computeMatches(){MATCH=new Set();CTX=new Set();MLIST=[];const fc=$("fco
   const n=MLIST.length,i=cur?MLIST.indexOf(cur):-1;
   const t=!n?"No matches":i>=0?`${i+1} of ${n}`:`${n} match${n>1?"es":""}`;if(fc.textContent!==t)fc.textContent=t;}
 const faded=d=>filtering()&&!MATCH.has(d)&&!CTX.has(d);
+// Each result says where it matched: the name, or a short piece of the note around the match.
+function hl(text,q){const i=text.toLowerCase().indexOf(q);if(i<0)return[text];return[text.slice(0,i),el("mark",{},text.slice(i,i+q.length)),text.slice(i+q.length)];}
+function renderResults(){const box=$("qres");if(!FQ||document.activeElement!==$("q")&&!box.matches(":hover")){box.hidden=true;return}
+  const list=MLIST.slice(0,30);box.hidden=false;
+  box.replaceChildren(...(list.length?list.map(d=>{const note=d.data.note||"",inName=d.data.name.toLowerCase().includes(FQ);let snip=null;
+      if(!inName){const i=note.toLowerCase().indexOf(FQ);if(i>=0){const a=Math.max(0,i-30),txt=(a?"…":"")+note.slice(a,i+FQ.length+50)+(i+FQ.length+50<note.length?"…":"");snip=el("span",{class:"qs"},hl(txt,FQ));}
+        else if(d.nid.toLowerCase().includes(FQ))snip=el("span",{class:"qs"},"id: ",hl(d.nid,FQ));}
+      return el("button",{class:"qr"+(d===cur?" on":""),type:"button",role:"option",onmousedown:e=>e.preventDefault(),onclick:()=>{goTo(d,{focus:false});computeMatches();renderResults();}},
+        el("b",{},inName?hl(d.data.name,FQ):d.data.name),snip);})
+    :[el("div",{class:"qs empty"},"No node mentions that")]));}
 
 function ariaLabel(d){const dc=decOf(d);let s=d.data.name;if(d.data.h)s+=", human step";if(d.data.done)s+=", done";if(d.data.todo)s+=", to do";
   {const df=diffOf(d);if(df)s+=df==="new"?", new this round":", changed since last round";}
@@ -565,7 +587,7 @@ function renderOutline(){if(!OUT)return;padOutline();const box=$("outline"),ae=d
         onclick:ev=>{if(!ev.target.closest(".oc"))select(d)},ondblclick:ev=>{if(!ev.target.closest(".oc"))toggle(d)}},
       el("button",{class:"oc"+(kd?"":" leaf"),type:"button",tabindex:-1,"aria-hidden":"true",onclick:ev=>{ev.stopPropagation();toggle(d)}},kd?(d.children?"−":"+"):""),
       k?el("span",{class:"L "+DEC[k].cls},DEC[k].L):(c=>c?el("span",{class:"L Lo",style:`color:${DEC[decOf(c)].col};border-color:${DEC[decOf(c)].col}`,title:"Covered by "+DEC[decOf(c)].label+" on "+c.data.name},DEC[decOf(c)].L):null)(kd?null:coverOf(d)),
-      el("div",{class:"ob"},el("div",{class:"on"},(d.data.done?"✓ ":d.data.todo?"○ ":"")+d.data.name,d.data.h?el("span",{class:"ot"},"human step"):null,diffOf(d)?el("span",{class:"otag"},diffOf(d)==="new"?"new":"changed"):null),
+      el("div",{class:"ob"},el("div",{class:"on"},(d.data.done?"✓ ":d.data.todo?"○ ":"")+d.data.name,d.data.h?el("span",{class:"ot"},"human step"):null,diffOf(d)?el("span",{class:"otag"},diffOf(d)==="new"?"new":"changed"):RMOV[d.nid]?el("span",{class:"otag"},"moved"):null),
         d.data.note?el("div",{class:"onote"},d.data.note):null,e&&e.t.trim()?el("div",{class:"otx"},e.t.trim()):null));
     r.classList.toggle("sel",d===cur);r.classList.toggle("cut",k==="cut");r.classList.toggle("dim",cutAncestor(d));
     r.classList.toggle("fade",faded(d));r.classList.toggle("ctx",filtering()&&!MATCH.has(d)&&CTX.has(d));
@@ -573,7 +595,8 @@ function renderOutline(){if(!OUT)return;padOutline();const box=$("outline"),ae=d
   const st=box.scrollTop;rendering=true;box.replaceChildren(...rows);box.scrollTop=st;
   // Focus goes to the selected row, never back to the row that had it (that would undo the selection).
   if(had){const n=rowEl(cur||root);if(n)n.focus({preventScroll:true});}rendering=false;}
-function focusNode(d){const e=OUT?rowEl(d):nodeEl(d);if(e)e.focus({preventScroll:true});}
+// Never pull focus out of an open dialog (a delayed walk-mode step could otherwise land behind it).
+function focusNode(d){if(typeof modalOpen==="function"&&modalOpen())return;const e=OUT?rowEl(d):nodeEl(d);if(e)e.focus({preventScroll:true});}
 function padOutline(){const fd=document.querySelector(".find"),o=$("outline"),h=(fd?fd.offsetTop+fd.offsetHeight:0)+10;
   o.style.paddingTop=h+"px";o.style.scrollPaddingTop=h+"px";}
 addEventListener("resize",()=>{if(OUT)padOutline();});
@@ -615,8 +638,6 @@ function showChildren(t,d){
 function ensureVisible(d){if(OUT){const r=rowEl(d);if(r)r.scrollIntoView({block:"nearest"});return}
   const t=T(),w=stage.clientWidth,h=stage.clientHeight,M=30,fd=document.querySelector(".find"),lg=$("legend");
   const top=M+(fd?fd.offsetHeight+10:0),bot=M+(lg&&lg.style.display!=="none"?lg.offsetHeight+10:0);
-  // Too small to read (after F): zoom to reading size around the node.
-  if(t.k<MINK*0.95){const k=MINK;return moveTo(d3.zoomIdentity.translate(w/2-(d.y+W(d)/2)*k,(top+h-bot)/2-d.x*k).scale(k));}
   const x0=t.applyX(d.y),x1=t.applyX(d.y+W(d)+CH(d)+44),y=t.applyY(d.x);let dx=0,dy=0;
   if(x1>w-M-44)dx=(w-M-44)-x1;if(x0+dx<M)dx=M-x0;if(y<top)dy=top-y+20;else if(y>h-bot)dy=(h-bot)-y-20;
   if(dx||dy)moveTo(t.translate(dx/t.k,dy/t.k));}
@@ -648,10 +669,10 @@ function select(d,{focus=true}={}){
 function goTo(d,{focus=true}={}){reveal(d);select(d,{focus});pulse(d);}
 function setDepth(n){ALL.forEach(d=>{if(d.depth<1||!kids(d))return;const open=d.depth<n;
     if(open&&d._children){d.children=d._children;d._children=null}else if(!open&&d.children){d._children=d.children;d.children=null}});
-  if(n>1)TOPS.forEach(t=>store.seen.add(t.nid));if(cur&&!visible().includes(cur))cur=cur.ancestors().find(a=>visible().includes(a))||root;
+  if(cur&&!visible().includes(cur))cur=cur.ancestors().find(a=>visible().includes(a))||root;
   update(root);paint();renderPanel();counts();queueSave(true);fit(true,{readable:true});toast(n>1?`Showing ${n} levels`:"Top level only");}
 // Walk mode: after Keep or Cut, go straight to the next item not covered yet (Change and Ask stay, for the note).
-let WALK=false;try{WALK=localStorage.getItem("canopy:walk")==="1"}catch(e){}
+let WALK=true;try{WALK=localStorage.getItem("canopy:walk")!=="0"}catch(e){}
 function toggleWalk(){WALK=!WALK;try{localStorage.setItem("canopy:walk",WALK?"1":"0")}catch(e){}
   toast(WALK?"Walk mode on: K or X moves to the next item":"Walk mode off");}
 // K X C A all leave focus on the map (typing never lands in a note by surprise); Enter writes a note, U undoes.
@@ -661,7 +682,7 @@ function setDecision(d,k){if(sealed)return;if(!d){toast("Select a node first: cl
   const e=store.decisions[d.nid]||{d:"",t:""};const prev=e.d;e.d=e.d===k?"":k;
   if(e.d||e.t.trim())store.decisions[d.nid]=e;else delete store.decisions[d.nid];
   tip.style.opacity=0;markSeen(d.top);queueSave();paint();renderPanel();counts();autoHideLegend();
-  if(WALK&&(e.d==="keep"||e.d==="cut"))setTimeout(()=>nextUnreviewed(1),160);
+  if(WALK&&(e.d==="keep"||e.d==="cut"))setTimeout(()=>{if(!modalOpen()&&!sealed)nextUnreviewed(1)},160);
   const nm=d.data.name.length>40?d.data.name.slice(0,39)+"…":d.data.name;
   toast(e.d?`${DEC[e.d].label}: ${nm} · Enter to ${e.d==="change"?"say what should change":e.d==="ask"?"write your question":"add a note"} · U to undo`:`Removed ${DEC[prev].label} from ${nm} · U to undo`,4200);
 }
@@ -694,13 +715,17 @@ function diffBox(d){if(!RD)return null;const df=diffOf(d),said=RSAID[d.nid],rows
   if(df==="changed"){const w=RCHG[d.nid];rows.push(el("div",{},el("b",{},"Changed"),` since round ${RD.n-1}`));
     if(w.name!==d.data.name)rows.push(el("div",{class:"was"},w.name));
     if((w.note||"")!==(d.data.note||""))rows.push(el("div",{class:"was"},w.note||"(no note)"));}
-  if(said){const k=DECS.includes(said.d)?said.d:"note";rows.push(el("div",{},"Last round you said: ",el("span",{class:"L "+DEC[k].cls},DEC[k].L),DEC[k].label,said.t?": "+said.t:""));}
+  if(RMOV[d.nid])rows.push(el("div",{},el("b",{},"Moved"),` here (was under ${nameOf(RMOV[d.nid])})`));
+  const car=RCAR[d.nid];
+  if(car&&car.from===d.nid&&!df){const k=DECS.includes(car.d)?car.d:"note";rows.push(el("div",{},`Kept from round ${RD.n-1}: `,el("span",{class:"L "+DEC[k].cls},DEC[k].L),DEC[k].label,car.t?": "+car.t:""));}
+  else if(car&&car.from!==d.nid){const k=car.d;rows.push(el("div",{},el("span",{class:"L "+DEC[k].cls},DEC[k].L),`${DEC[k].label} from the removed branch ${nameOf(car.from)}`));}
+  else if(said){const k=DECS.includes(said.d)?said.d:"note";rows.push(el("div",{},df==="changed"?"Before this change you said: ":"Last round you said: ",el("span",{class:"L "+DEC[k].cls},DEC[k].L),DEC[k].label,said.t?": "+said.t:""));}
   return rows.length?el("div",{class:"diff"},rows):null;}
 function renderRemoved(){const b=$("removedbox"),rm=RD?RD.removed:[];b.hidden=!rm.length;if(!rm.length)return;
   $("rmhead").textContent=`Removed since last round (${rm.length})`;
   $("rmlist").replaceChildren(...rm.map(r=>{const k=r.said&&DECS.includes(r.said.d)?r.said.d:r.said?"note":"";
     return el("div",{class:"di",style:"cursor:default"},k?el("span",{class:"L "+DEC[k].cls},DEC[k].L):el("span",{class:"L Ln"},"–"),
-      el("span",{},r.name,k?el("span",{class:"tx"},"You said "+DEC[k].label+(r.said.t?": "+r.said.t:"")):null));}));}
+      el("span",{},r.name,k?el("span",{class:"tx"},"You said "+DEC[k].label+(r.said.t?": "+r.said.t:"")):null,r.reason?el("span",{class:"tx"},"Claude: "+r.reason):el("span",{class:"tx"},"Claude gave no reason")));}));}
 function renderPanel(){
   const d=cur,box=$("nodebox");
   if(!d){box.replaceChildren(el("div",{class:"empty"},"Select a node (click its label) to decide on it. Use + or Space to open a branch."));}
@@ -730,15 +755,15 @@ function renderList(){
 }
 const covN=()=>LEAVES.filter(covered).length;
 function counts(){const n=covN(),dn=ALL.filter(reviewed).length;let s=`Covered ${n}/${LEAVES.length} items`;
-  if(CFG.gate)s+=` · Branches ${TOPS.length-missingTops().length}/${TOPS.length}`;$("progress").textContent=s;
+  if(CFG.gate)s+=` · Decided in ${TOPS.length-missingTops().length}/${TOPS.length} branches`;$("progress").textContent=s;
   $("next").title=`${dn} decision${dn===1?"":"s"} so far. Items are the nodes with no children; a decision on a branch counts for everything under it that has no decision of its own. Click or press N to jump to the next node not covered yet.`;
   refreshGate();renderList();}
 function refreshGate(){if(!CFG.gate)return;const m=missingTops();$("approve").setAttribute("aria-disabled",String(m.length>0));
   const gh=$("gatehint"),names=m.map(t=>t.data.name);gh.hidden=!m.length||sealed;
-  if(m.length){gh.textContent=`${m.length} branch${m.length>1?"es":""} left before Approve: `+(names.length>3?names.slice(0,3).join(", ")+` +${names.length-3} more`:names.join(", "));
+  if(m.length){gh.textContent=`${m.length} branch${m.length>1?"es":""} without a decision: `+(names.length>3?names.slice(0,3).join(", ")+` +${names.length-3} more`:names.join(", "));
     gh.title=GATE_RULE+". Click to open the next one. Left: "+names.join(", ");}
   $("approve").title=m.length?`${GATE_RULE}. Left: ${m.map(t=>t.data.name).join(", ")}`:"Approve the plan";
-  let s=$("progress").textContent.replace(/ · Branches .*$/,"");$("progress").textContent=s+` · Branches ${TOPS.length-m.length}/${TOPS.length}`;}
+  let s=$("progress").textContent.replace(/ · Decided in .*$/,"");$("progress").textContent=s+` · Decided in ${TOPS.length-m.length}/${TOPS.length} branches`;}
 let noteFor;
 function bindNote(ta){
 ta.addEventListener("input",e=>{if(!cur)return;editAt="saved";const en=store.decisions[cur.nid]||{d:"",t:""};en.t=e.target.value.slice(0,20000);
@@ -786,7 +811,9 @@ function openSheet(action){
   $("shbody").replaceChildren(...body);
   const go=$("shgo");const notes=by.change.length+by.cut.length+by.ask.length;
   go.textContent={submit:"Send to Claude",approve:notes?"Approve with notes":"Approve",request_changes:"Send change requests"}[action];
-  go.disabled=action==="approve"&&miss.length>0;
+  const nothing=action==="request_changes"&&!by.change.length&&!by.cut.length&&!by.ask.length&&!by.note.length&&!store.general.trim();
+  go.disabled=(action==="approve"&&miss.length>0)||nothing;
+  go.title=nothing?"Nothing to send yet: add a Change, Cut, Ask or a note first":"";
   go.onclick=()=>{closeModal();send("/api/submit",Object.assign({action},payload()),action);};
   openModal("sheet");
 }
@@ -892,8 +919,7 @@ document.addEventListener("keydown",e=>{
 $("next").onclick=()=>nextUnreviewed(1);
 $("gatehint").onclick=()=>{const t=missingTops()[0];if(!t)return;if(t._children)toggle(t);else markSeen(t);select(t);};
 function zoomBy(f){if(OUT){toast("Zoom works on the map. Press O to go back to it.");return}(reduce?svg:svg.transition().duration(200)).call(zoom.scaleBy,f);}
-// Expand all opens every branch, so in a gate review each top-level branch counts as looked at.
-$("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});TOPS.forEach(t=>store.seen.add(t.nid));update(root);queueSave(true);counts();
+$("expand").onclick=()=>{ALL.forEach(d=>{if(d._children){d.children=d._children;d._children=null}});update(root);queueSave(true);counts();
   fit(true,{readable:true});let hinted=null;try{hinted=sessionStorage.getItem("canopy:exphint")}catch(e){}
   if(!OUT&&visible().length>40&&!hinted){toast("Showing everything at reading size: drag to pan, F for the whole map, O for a list",5000);try{sessionStorage.setItem("canopy:exphint","1")}catch(e){}}};
 $("collapse").onclick=()=>{ALL.forEach(d=>{if(d.depth>=1&&d.children){d._children=d.children;d.children=null}});if(cur&&cur.depth>1)cur=cur.top;update(root);paint();renderPanel();queueSave(true);fit(true,{readable:true})};
@@ -901,12 +927,14 @@ $("fit").onclick=()=>fit();
 $("view").onclick=()=>setView(!OUT);
 $("theme").onclick=cycleTheme;
 let qT=null;
-$("q").addEventListener("input",e=>{clearTimeout(qT);qT=setTimeout(()=>{FQ=e.target.value.trim().toLowerCase();applyFilter();},180);});
+$("q").addEventListener("input",e=>{clearTimeout(qT);qT=setTimeout(()=>{FQ=e.target.value.trim().toLowerCase();applyFilter();renderResults();},180);});
+$("q").addEventListener("focus",()=>renderResults());
+$("q").addEventListener("blur",()=>setTimeout(renderResults,150));
 $("q").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){e.preventDefault();clearTimeout(qT);FQ=e.target.value.trim().toLowerCase();nextMatch(e.shiftKey?-1:1);}
+  if(e.key==="Enter"){e.preventDefault();clearTimeout(qT);FQ=e.target.value.trim().toLowerCase();nextMatch(e.shiftKey?-1:1);renderResults();}
   else if(e.key==="ArrowDown"&&cur){e.preventDefault();focusNode(cur);}
   else if(e.key==="Escape"&&(e.target.value||FK)){e.preventDefault();e.stopPropagation();clearFilter();}});
-function clearFilter(){$("q").value="";FQ="";$("flt").value="";FK="";applyFilter();}
+function clearFilter(){$("q").value="";FQ="";$("flt").value="";FK="";applyFilter();renderResults();}
 $("fclear").onclick=()=>{clearFilter();$("q").focus();};
 $("flt").addEventListener("change",e=>{FK=e.target.value;applyFilter();});
 $("zin").onclick=()=>zoomBy(1.25);

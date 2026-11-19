@@ -5,8 +5,8 @@
 ![Canopy demo: open a branch, Keep / Cut / Ask, review and send](docs/demo.gif)
 
 - **Per-node decisions**, one key each: `K` Keep, `X` Cut, `C` Change, `A` Ask, plus optional text.
-- **Approval gate** (`--gate`): Approve unlocks once you have opened or decided on every top-level branch. No blind "approve all". With Cut, Change or Ask decisions it becomes **Approve with notes**.
-- **Review rounds**: the same plan keeps the same link. On round 2 every node Claude added or changed is marked, the panel shows the old text and what you said last time, and removed nodes are listed. One click filters to "Changed since last round".
+- **Approval gate** (`--gate`): Approve unlocks once every top-level branch has a decision (Keep, Cut, Change or Ask on the branch or anything in it). Opening branches or Expand all does not count, so there is no blind "approve all". With Cut, Change or Ask decisions it becomes **Approve with notes**.
+- **Review rounds**: the same plan keeps the same link. On round 2 every unchanged node keeps your decision (matched by node id, even if Claude moved it), only added or changed nodes need a look, the panel shows the old text and what you said, and removed nodes are listed with Claude's reason. One click filters to "Changed since last round".
 - **Structured output** with stable node ids (`--json`), or Markdown for a quick read.
 - **Local and offline.** Python standard library and a bundled d3. No CDN, no web fonts, no telemetry. The page is served only on `127.0.0.1`, behind a per-session token.
 - **Drafts survive** a reload, a closed tab, a timeout or a re-run.

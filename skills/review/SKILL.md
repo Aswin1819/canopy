@@ -10,7 +10,7 @@ A local review loop. The server (Python 3.8+ stdlib, bundled d3, no network) ser
 
 ## Review or gate?
 - **Review** (default): you want feedback on a structure. The person sends Keep / Cut / Change / Ask decisions and notes. Status `submitted`.
-- **`--gate`**: you need sign-off before doing the work (writing code, sending, publishing). The page shows **Approve** and **Request changes**. Approve unlocks only after every top-level branch has been opened, selected or ruled on (Expand all counts; a decision on the root covers all). Do not start the work until you get `approved`.
+- **`--gate`**: you need sign-off before doing the work (writing code, sending, publishing). The page shows **Approve** and **Request changes**. Approve unlocks once every top-level branch has a Keep / Cut / Change / Ask on the branch or something in it (opening it or a note alone does not count; a decision on the root covers all). Do not start the work until you get `approved`.
 - Add `--json` when you will act on many decisions (recommended); Markdown is the default.
 
 ## 1. Write the tree
@@ -33,7 +33,7 @@ Bash tool with `run_in_background: true` and `timeout: 7200000`:
 ```
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json [--gate] [--export-plan PLAN.md]
 ```
-(PowerShell: `& "${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json`.) The launcher picks `python3`, `python` or `py -3`. Read the first line of the task output once to get the URL (`Canopy ready: http://127.0.0.1:PORT/s/TOKEN/`), give it to the person and say: click a label to select, `+` to open, K / X / C / A to decide, add text for Change and Ask, then Review & send (or Approve / Request changes). Each plan file keeps the same URL on every round (same port and token), so for a second round edit the same file and re-run the same command; the tab left open on the last round offers "Open the next round" by itself.
+(PowerShell: `& "${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd" <file> --data-dir "${CLAUDE_PLUGIN_DATA}" --json`.) The launcher picks `python3`, `python` or `py -3`. Read the first line of the task output once to get the URL (`Canopy ready: http://127.0.0.1:PORT/s/TOKEN/`), give it to the person and say: click a label to select, `+` to open, K / X / C / A to decide, add text for Change and Ask, then Review & send (or Approve / Request changes). Each plan file keeps the same URL on every round (same port and token), so for a second round edit the same file and re-run the same command; the tab left open on the last round offers "Open the next round" by itself. Decisions carry over by node id: unchanged nodes keep last round's decision wherever they moved, a removed branch's decision passes to its old children, and only new or changed nodes need a fresh look, so keep ids stable when you restructure.
 
 ## 3. Wait, then act on the result
 Don't poll or kill the task; you are notified when it exits. JSON shape:
@@ -42,7 +42,7 @@ Don't poll or kill the task; you are notified when it exits. JSON shape:
 | status | exit | what to do |
 |---|---|---|
 | `approved` | 0 | Go ahead. Decisions are guidance: apply Change/Cut, answer Ask, as part of the work. |
-| `changes_requested` | 0 | Don't start. Revise: apply each `change`, remove each `cut`, answer each `ask` in chat, update the same tree file, offer to re-open it (same command, same URL). |
+| `changes_requested` | 0 | Don't start. Revise: apply each `change`, remove each `cut`, answer each `ask` in chat, update the same tree file, offer to re-open it (same command, same URL). Keep node ids stable. Never drop a node the person kept without a reason: add `"dropped": {"<id>": "why"}` at the top level of the tree. |
 | `submitted` | 0 | Act on each decision the same way; acknowledge `keep` and `note` briefly. |
 | `closed` | 0 | The person closed without sending. Ask in chat what they want; don't assume approval. |
 | `closed_tab` | 4 | Tab closed or lost. Drafts are kept: re-run the same command if they want to continue. |

@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.3.0 (2026-11-19)
+Phase 2a: quick review fixes, planned and approved in Canopy itself over four review rounds.
+
+### Rounds
+- Decisions carry across rounds by node id. A node keeps last round's decision when its name and note are unchanged, wherever Claude moved it, and counts as covered; a removed branch's Keep / Cut / Change / Ask passes down to its old children that had no decision of their own; a node whose text changed loses the old decision and needs a recheck. Round 2 no longer starts at 0.
+- Moved nodes are tagged "moved" (with the old parent in the panel) instead of looking removed.
+- When Claude drops a node, the tree can say why (`"dropped": {"id": "reason"}`); the removed list shows "Claude: …" or "Claude gave no reason". The skill tells Claude never to drop a kept node without one.
+
+### Gate
+- Approve unlocks once every top-level branch has a Keep / Cut / Change / Ask on the branch or something in it. Opening a branch, Expand all or a note alone no longer count, so Expand all can't unlock Approve in one click. The header says "Decided in 3 / 8 branches", and the server enforces the same rule.
+
+### Review flow
+- Walk mode is on by default: Keep or Cut moves straight to the next item not covered yet. W turns it off (remembered).
+- Calm camera: selecting never zooms on its own; the map only pans when the node is off-screen. After Fit, the whole map stays in view.
+- Search shows a results list with the matched text: the name, or a piece of the note around the match.
+- "Send change requests" is disabled when there is nothing to send, with the reason in its tooltip.
+- The id line is 13 px, and muted text is lighter in dark mode.
+- Fix: a delayed walk-mode step could move focus behind an open dialog, so Esc stopped closing it.
+
+### Tests
+- Regression tests for carrying decisions by id (moved nodes, changed nodes, branch decisions passed down, dropped reasons, older round files) and for the gate counting decisions, not opened branches or notes.
+
 ## 1.2.0 (2026-11-19)
 One colour system with a dark theme, round-to-round review, and consistent wording. Shaped by a brand audit and a look at similar tools (Plannotator, PR review, mind-map tools).
 

@@ -76,4 +76,4 @@ The icon's leaves should use the light branch strokes (teal, indigo, violet, orc
 | round | session | each time the same plan file is opened again |
 | human step, to do, done | human, todo | node tags |
 
-UI copy rules: sentence case on buttons; "…" only on buttons that open a dialog (Close…, Send review…, Approve…, Request changes…); short active sentences; say what happens ("Saved · 14:02", "Sent to Claude"). The gate rule is always one sentence: "Approve unlocks once you have opened or decided on every top-level branch."
+UI copy rules: sentence case on buttons; "…" only on buttons that open a dialog (Close…, Send review…, Approve…, Request changes…); short active sentences; say what happens ("Saved · 14:02", "Sent to Claude"). The gate rule is always one sentence: "Approve unlocks once every top-level branch has a decision (on the branch or anything in it)."

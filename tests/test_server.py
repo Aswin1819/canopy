@@ -182,13 +182,14 @@ class TestFlows(ServerCase):
         # submit is not a gate action
         st, _, _ = s.post("/api/submit", {"action": "submit"})
         self.assertEqual(st, 400)
-        # approve before every top-level branch was looked at -> 409 naming the missing ones
-        st, body, _ = s.post("/api/submit", {"action": "approve", "seen": ["be"], "decisions": {}})
+        # approve before every top-level branch has a decision -> 409 naming the missing ones
+        st, body, _ = s.post("/api/submit", {"action": "approve", "seen": ["be", "frontend", "docs"], "decisions": {}})
         self.assertEqual(st, 409)
-        self.assertEqual(sorted(json.loads(body)["missing"]), ["docs", "frontend"])
-        # a decision inside a branch counts as looking at it
-        dec = {"be/db": {"d": "cut", "t": "not needed"}, "frontend/button": {"d": "change", "t": "blue"}}
-        st, _, _ = s.post("/api/submit", {"action": "approve", "seen": ["docs"], "decisions": dec, "general": "go"})
+        self.assertEqual(sorted(json.loads(body)["missing"]), ["be", "docs", "frontend"])
+        # a decision inside a branch counts; a branch decision counts for itself
+        dec = {"be/db": {"d": "cut", "t": "not needed"}, "frontend/button": {"d": "change", "t": "blue"},
+               "docs": {"d": "keep", "t": ""}}
+        st, _, _ = s.post("/api/submit", {"action": "approve", "decisions": dec, "general": "go"})
         self.assertEqual(st, 200)
         code, out, _ = s.finish()
         self.assertEqual(code, 0)
@@ -201,6 +202,22 @@ class TestFlows(ServerCase):
         self.assertNotIn("DB", text)                  # cut removed
         self.assertIn("> Change: blue", text)
         self.assertEqual(res["exported_plan"], str(plan.resolve()))
+
+    def test_gate_counts_decisions_not_opened_branches(self):
+        # Regression: opening (or Expand all) and notes alone must not unlock Approve.
+        s = self.start("--gate", "--json")
+        all_seen = {"seen": ["be", "frontend", "docs"]}
+        st, body, _ = s.post("/api/submit", dict(all_seen, action="approve", decisions={}))
+        self.assertEqual((st, sorted(json.loads(body)["missing"])), (409, ["be", "docs", "frontend"]))
+        notes = {"be": {"d": "", "t": "looks fine"}, "frontend/button": {"d": "", "t": "ok"}, "docs": {"d": "", "t": "?"}}
+        st, body, _ = s.post("/api/submit", dict(all_seen, action="approve", decisions=notes))
+        self.assertEqual((st, sorted(json.loads(body)["missing"])), (409, ["be", "docs", "frontend"]))
+        part = {"be/api": {"d": "keep", "t": ""}, "frontend": {"d": "ask", "t": "why?"}}
+        st, body, _ = s.post("/api/submit", dict(all_seen, action="approve", decisions=part))
+        self.assertEqual((st, json.loads(body)["missing"]), (409, ["docs"]))
+        st, _, _ = s.post("/api/submit", {"action": "approve", "decisions": dict(part, docs={"d": "cut", "t": ""})})
+        self.assertEqual(st, 200)
+        self.assertEqual(json.loads(s.finish()[1])["status"], "approved")
 
     def test_gate_request_changes(self):
         s = self.start("--gate")
@@ -312,6 +329,49 @@ class TestFlows(ServerCase):
 
 
 class TestParsing(unittest.TestCase):
+    def test_decisions_carry_across_rounds_by_id(self):
+        # Regression: round N+1 keeps round N's decisions for unchanged nodes, wherever they moved.
+        t1 = {"title": "P", "root": {"id": "root", "name": "P", "children": [
+            {"id": "loop", "name": "Loop", "children": [
+                {"id": "loop.wait", "name": "Wait", "note": "w"},
+                {"id": "loop.status", "name": "Status", "note": "s"},
+                {"id": "loop.reply", "name": "Reply", "children": [{"id": "loop.reply.ui", "name": "UI"}]}]},
+            {"id": "live", "name": "Live", "children": [
+                {"id": "live.sse", "name": "SSE"}, {"id": "live.watch", "name": "Watch", "note": "old"}]},
+            {"id": "old", "name": "Old idea"}]}}
+        d1, _ = mr.normalise(t1)
+        last = {"n": 1, "nodes": mr.snapshot(d1), "decisions": {
+            "loop": {"d": "keep", "t": ""},              # branch decision, branch removed below
+            "loop.reply": {"d": "change", "t": "short"}, # own decision inside it wins
+            "live.sse": {"d": "keep", "t": "yes"},       # moves to a new parent, unchanged
+            "live.watch": {"d": "ask", "t": "how?"},     # text changes -> recheck, no carry
+            "old": {"d": "keep", "t": ""}}}              # dropped with a reason
+        t2 = {"title": "P", "dropped": {"old": "merged into Live"}, "root": {"id": "root", "name": "P", "children": [
+            {"id": "p2c", "name": "Phase 2c", "children": [
+                {"id": "loop.wait", "name": "Wait", "note": "w"},
+                {"id": "loop.status", "name": "Status", "note": "s"},
+                {"id": "loop.reply", "name": "Reply", "children": [{"id": "loop.reply.ui", "name": "UI"}]},
+                {"id": "live.sse", "name": "SSE"}]},
+            {"id": "live", "name": "Live", "children": [{"id": "live.watch", "name": "Watch", "note": "new"}]}]}}
+        d2, _ = mr.normalise(t2)
+        r = mr.round_diff(d2, last)
+        c = r["carried"]
+        self.assertEqual(c["live.sse"], {"d": "keep", "t": "yes", "from": "live.sse"})        # moved, kept
+        self.assertEqual(r["moved"]["live.sse"], "live")
+        self.assertEqual(c["loop.wait"], {"d": "keep", "t": "", "from": "loop"})             # passed down
+        self.assertEqual(c["loop.status"]["from"], "loop")
+        self.assertEqual(c["loop.reply"], {"d": "change", "t": "short", "from": "loop.reply"})  # own wins
+        self.assertNotIn("loop.reply.ui", c)                       # covered by its parent's own decision
+        self.assertNotIn("live.watch", c)                          # changed text: needs a recheck
+        self.assertEqual(r["changed"]["live.watch"]["note"], "old")
+        self.assertEqual(r["new"], ["p2c"])
+        removed = {x["id"]: x for x in r["removed"]}
+        self.assertEqual(set(removed), {"loop", "old"})
+        self.assertEqual(removed["old"]["reason"], "merged into Live")
+        # older round files without parents still diff
+        legacy = {"n": 1, "nodes": {k: v[:2] for k, v in last["nodes"].items()}, "decisions": last["decisions"]}
+        self.assertEqual(mr.round_diff(d2, legacy)["carried"]["live.sse"]["d"], "keep")
+
     def test_branch_decision_covers_items(self):
         doc, _ = mr.normalise(json.loads(json.dumps(TREE)))
         # Keep on the Backend branch covers API and DB; a note on Frontend does not cover Button; Docs has its own note.
